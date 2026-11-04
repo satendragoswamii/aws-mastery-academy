@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // npm scripts always run from the project root; pin it so a stray
+  // ~/package-lock.json is not mistaken for the workspace root.
+  outputFileTracingRoot: process.cwd(),
+  poweredByHeader: false,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
