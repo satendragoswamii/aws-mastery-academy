@@ -1,0 +1,115 @@
+title: IaaS, PaaS and SaaS
+summary: >-
+  The three cloud service models (Infrastructure, Platform and Software as a Service), plus serverless,
+  who manages what in each, how to pick one, and a hands-on comparison of a self-managed server with a managed database on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - public-private-hybrid-cloud
+topics:
+  - service-models
+  - managed-services
+  - serverless
+  - shared-responsibility
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.1 benefits, including managed services); Domain 2 (task 2.1 how responsibility shifts with the service used)"
+
+sections:
+  terms:
+    - term: IaaS (Infrastructure as a Service)
+      simple: Renting the basic building blocks (virtual servers, disks, networks) and setting up everything on them yourself.
+      technical: A service model where the provider supplies virtualised compute, storage and networking, and the customer manages the operating system, middleware, runtime, applications and data.
+      example: Amazon EC2, Amazon EBS, Amazon VPC.
+      relevance: Maximum control and maximum responsibility. The exam calls EC2 the classic IaaS service.
+    - term: PaaS (Platform as a Service)
+      simple: Renting a ready platform where you just bring your code or data. The provider looks after the servers and software underneath.
+      technical: A service model where the provider manages the infrastructure, operating system and runtime, and the customer deploys and manages applications and data.
+      example: AWS Elastic Beanstalk, Amazon RDS (managed relational databases).
+      relevance: Removes undifferentiated heavy lifting such as OS patching and database installation.
+    - term: SaaS (Software as a Service)
+      simple: Using finished software over the internet, without installing or running anything yourself.
+      technical: A service model where the provider delivers a complete application; the customer manages only its own data, users and configuration.
+      example: Gmail, Microsoft 365, Zoom; on AWS, Amazon WorkMail or Amazon Connect.
+      relevance: Least control and least responsibility. Recognise it in exam scenarios ("use a finished application").
+    - term: Serverless
+      simple: Running code or storing data without ever thinking about servers, and paying only when it's actually used.
+      technical: A model where the provider fully manages capacity, scaling and availability, with no servers to provision and billing per use, often scaling to zero.
+      example: AWS Lambda, Amazon DynamoDB (on-demand), Amazon S3.
+      relevance: The most managed end of the spectrum, heavily featured across AWS exams.
+    - term: Managed service
+      simple: A service where AWS does the hard operational work (patching, backups, scaling) for you.
+      technical: A service in which the provider operates the underlying infrastructure and software, including maintenance, availability and often scaling, exposing only an API and configuration.
+      example: Amazon RDS takes automated backups and applies database patches during a maintenance window you choose.
+      relevance: "Use a managed service" is a common correct answer when a question asks how to reduce operational overhead.
+    - term: Operational overhead
+      simple: All the routine work needed just to keep a system running.
+      technical: The ongoing effort of patching, monitoring, backup, scaling, capacity management and incident handling that doesn't add business features.
+      example: Applying monthly OS security patches to 40 servers.
+      relevance: Moving up from IaaS to PaaS to SaaS reduces it. A recurring exam theme.
+    - term: Vendor lock-in
+      simple: Becoming so dependent on one provider's product that moving away is hard and expensive.
+      technical: Dependency on proprietary APIs, data formats or features that increases the cost of switching providers.
+      example: An application deeply built on one provider's proprietary database.
+      relevance: A real trade-off of higher-level services. Reduced with portable formats, containers and clear abstractions.
+
+  interview:
+    beginner:
+      - question: Explain IaaS, PaaS and SaaS with an example of each.
+        modelAnswer: >-
+          IaaS gives you raw infrastructure such as virtual servers, and you manage the OS and everything above it, for example
+          Amazon EC2. PaaS gives you a managed platform where you bring only your code or data, for example Elastic Beanstalk
+          or Amazon RDS. SaaS is complete software you just use, for example Gmail or Microsoft 365.
+      - question: Which service model gives you the most control?
+        modelAnswer: >-
+          IaaS, because you manage the operating system, runtime, applications and data. The cost of that control is more
+          responsibility: patching, hardening, scaling and backups.
+    intermediate:
+      - question: Your team spends most of its time patching database servers on EC2. What would you suggest?
+        modelAnswer: >-
+          Move the database to a managed service such as Amazon RDS (or Aurora, or DynamoDB if the data model fits). AWS then
+          handles OS and database patching, automated backups and Multi-AZ failover. The team keeps responsibility for the
+          schema, queries, access control and data, but stops doing undifferentiated heavy lifting.
+      - question: Is serverless the same as PaaS?
+        modelAnswer: >-
+          They overlap but aren't the same. Both hide the servers. Serverless goes further: no capacity to choose, automatic
+          scaling (often to zero) and pay-per-use billing. Some PaaS offerings still need you to pick instance sizes and pay
+          while idle.
+    advanced:
+      - question: When would you deliberately choose IaaS over a managed service?
+        modelAnswer: >-
+          When you need something the managed service doesn't support: a specific OS or kernel setting, a database engine or
+          version not offered, custom licensing, special software agents, or full control for compliance reasons. Also when
+          lifting and shifting quickly before re-platforming. You accept higher operational overhead, so automate it with
+          Systems Manager patching, golden images and Infrastructure as Code.
+
+  check:
+    - question: >-
+        For each of these, name the service model: (a) a company launches EC2 instances and installs PostgreSQL itself;
+        (b) the same company switches to Amazon RDS for PostgreSQL; (c) staff use Microsoft 365 for email.
+      hints:
+        - Who installs and patches the database software in each case?
+        - In (c), does the company run any software at all?
+      answer: >-
+        (a) IaaS: they manage the OS and the database. (b) PaaS / managed service: AWS manages the OS and database engine,
+        the company manages schema and data. (c) SaaS: the company only uses the software and manages its own users and data.
+    - question: >-
+        In the demonstration, list three things you would still have to do yourself for the EC2 "database server" that
+        you never had to think about for the DynamoDB table.
+      hints:
+        - The EC2 instance started with only an operating system.
+        - Think about patching, installing, backing up and scaling.
+      answer: >-
+        Any three of: install and configure database software; patch the OS and the database; set up backups and test
+        restores; size the instance and scale it as data grows; set up replication or failover for high availability;
+        monitor disk space. DynamoDB on-demand handles all of these.
+    - question: A startup wants the least operational overhead for a new API. Rank EC2, Elastic Beanstalk and Lambda from most to least overhead.
+      hints:
+        - Which one makes you manage the OS?
+        - Which one bills per request and has no servers to size?
+      answer: >-
+        EC2 (most: you manage OS, runtime, scaling), then Elastic Beanstalk (AWS manages the platform, but instances still
+        exist and are sized), then Lambda (least: serverless, no servers to manage, scales automatically).
