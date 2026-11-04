@@ -1,0 +1,123 @@
+title: Scalability and elasticity
+summary: >-
+  The difference between scaling up and scaling out, between scalability and elasticity, how Auto Scaling keeps
+  capacity matched to demand, and an Auto Scaling group you grow and shrink across two Availability Zones on Floci.
+estimatedMinutes: 45
+prerequisites:
+  - iaas-paas-saas
+topics:
+  - scalability
+  - elasticity
+  - auto-scaling
+  - horizontal-vs-vertical
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.1 elasticity; task 1.2 Well-Architected design principles); Domain 3 (task 3.3 compute and Auto Scaling)"
+
+sections:
+  terms:
+    - term: Scalability
+      simple: A system's ability to handle more work by adding more resources.
+      technical: The capacity of a system to maintain performance as load grows, by adding resources (vertically or horizontally) without redesign.
+      example: An app that serves 1,000 users on 2 servers and 10,000 users on 20 servers.
+      relevance: A core design goal. The exam distinguishes it from elasticity.
+    - term: Elasticity
+      simple: Automatically adding resources when demand rises and removing them when it falls, so you only pay for what you need.
+      technical: The ability to acquire and release resources dynamically, ideally automatically, so provisioned capacity closely tracks demand over time.
+      example: A ticket-booking site that runs 2 servers at night and 30 when tickets for a big match go on sale.
+      relevance: One of the defining characteristics of cloud computing and a favourite exam keyword.
+    - term: Vertical scaling (scale up/down)
+      simple: Making one machine bigger or smaller.
+      technical: Changing the capacity of a single resource, such as moving to an instance type with more CPU and memory.
+      example: Changing a database server from t3.medium to r6i.xlarge.
+      relevance: Simple, but limited by the biggest machine available and usually needs a restart.
+    - term: Horizontal scaling (scale out/in)
+      simple: Adding more machines, or removing some.
+      technical: Changing the number of resource instances that share the load, typically behind a load balancer.
+      example: Going from 2 to 10 web servers during a sale.
+      relevance: The cloud-native way to scale. Requires stateless application design.
+    - term: Auto Scaling group (ASG)
+      simple: A group of EC2 instances that AWS keeps at the right size automatically.
+      technical: A logical collection of EC2 instances managed by Amazon EC2 Auto Scaling, defined by a launch template and minimum, maximum and desired capacity, which it maintains and adjusts according to policies and health checks.
+      example: An ASG with min 2, max 10, desired 4, across three AZs.
+      relevance: The main AWS service for elasticity and self-healing of EC2 fleets.
+    - term: Launch template
+      simple: A recipe that tells AWS exactly what kind of server to create.
+      technical: A versioned resource specifying instance configuration (AMI, instance type, security groups, user data and more) used to launch instances.
+      example: "Template ama-l1-web: Amazon Linux 2023 on t3.micro."
+      relevance: Every ASG needs one. Changing the recipe means creating a new template version.
+    - term: Desired capacity
+      simple: How many servers the group should have right now.
+      technical: The number of instances an ASG attempts to maintain, always between the group's minimum and maximum size, changed manually or by scaling policies.
+      example: Setting desired capacity from 1 to 3 makes the ASG launch two more instances.
+      relevance: Scaling policies work by changing this number.
+    - term: Target tracking scaling policy
+      simple: A rule like "keep average CPU at 50%". AWS adds or removes servers to stay near that target.
+      technical: A scaling policy that adjusts capacity to keep a chosen metric (such as average CPU utilisation or requests per target) close to a target value, using CloudWatch alarms it creates and manages.
+      example: Target 50% average CPU. At 80% the ASG scales out; at 20% it scales in.
+      relevance: The recommended, simplest way to make an ASG elastic.
+    - term: Stateless
+      simple: A server that doesn't keep anything important on itself, so any server can handle any request.
+      technical: A design where session data and state live outside the instance (for example in a database or cache), so instances can be added or removed freely.
+      example: Storing shopping-cart contents in DynamoDB instead of in server memory.
+      relevance: Horizontal scaling and elasticity only work well with stateless instances.
+
+  interview:
+    beginner:
+      - question: What's the difference between scalability and elasticity?
+        modelAnswer: >-
+          Scalability is the ability to handle more load by adding resources. Elasticity means doing it automatically and
+          in both directions: adding capacity when demand rises and removing it when demand falls, so capacity follows
+          demand and you stop paying for what you don't need.
+      - question: What's the difference between scaling up and scaling out?
+        modelAnswer: >-
+          Scaling up (vertical) makes one machine bigger, for example more CPU and memory. Scaling out (horizontal) adds
+          more machines that share the load. Scaling out has no single-machine limit and improves availability.
+    intermediate:
+      - question: Why does horizontal scaling need a stateless application?
+        modelAnswer: >-
+          New instances may serve any user, and instances may be removed at any time. If session data lives in an
+          instance's memory or disk, users lose it when they hit another instance or when that instance is terminated.
+          Keeping state in a shared store (database, cache, S3) lets any instance handle any request.
+      - question: How does an Auto Scaling group help with availability, not just cost?
+        modelAnswer: >-
+          It replaces unhealthy instances automatically to keep the desired capacity (self-healing), and it spreads
+          instances across the Availability Zones you choose, so losing an AZ leaves capacity in the others, which it
+          then rebalances.
+    advanced:
+      - question: Traffic spikes from 1,000 to 50,000 requests a minute within 60 seconds when a sale opens. Target tracking reacts too slowly. What would you do?
+        modelAnswer: >-
+          Use scheduled scaling to raise capacity before the known start time, and consider predictive scaling for
+          recurring patterns. Keep warm capacity and use warm pools to cut launch time. Make instances start fast
+          (pre-baked AMIs). Put a queue in front of non-urgent work, and use CloudFront caching to absorb read traffic.
+          Load-test beforehand, and check service quotas so the ASG can actually reach its maximum.
+
+  check:
+    - question: >-
+        In the demonstration, after you set desired capacity to 3, which Availability Zones did the instances land in,
+        and why does that matter?
+      hints:
+        - Look at the second column of the describe output after step 4.
+        - Which AZs did you list when creating the group?
+      answer: >-
+        They were spread across ap-south-1a and ap-south-1b, the two AZs given at creation. Auto Scaling balances instances
+        across the group's AZs, so if one AZ fails, instances in the other keep serving and the group launches replacements there.
+    - question: A database server is slow during month-end reporting. Would you scale it vertically or horizontally first, and why?
+      hints:
+        - Can you simply add more copies of a database that accepts writes?
+        - Which is quicker to do for a single database server?
+      answer: >-
+        Usually vertically first: move to a larger instance class, because a single writable database can't simply be
+        cloned behind a load balancer. For read-heavy reports, adding read replicas (a form of horizontal scaling for
+        reads) is the next step.
+    - question: You set desired capacity to 9 on a group with maximum size 4. What happens, and why is a maximum useful?
+      hints:
+        - Re-read the error in step 6.
+        - Think about runaway costs and bugs.
+      answer: >-
+        The request is rejected with a ValidationError: desired capacity must stay between MinSize and MaxSize. The maximum
+        caps cost and protects you if a bug, attack or misconfigured policy tries to scale endlessly.
