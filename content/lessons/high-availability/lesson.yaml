@@ -1,0 +1,118 @@
+title: High availability
+summary: >-
+  What "highly available" means and how it's measured (nines, SLAs, downtime budgets), how to remove single points of
+  failure with redundancy across Availability Zones, and a live health-check failover drill with a load balancer on Floci.
+estimatedMinutes: 45
+prerequisites:
+  - scalability-and-elasticity
+topics:
+  - high-availability
+  - redundancy
+  - health-checks
+  - load-balancing
+  - sla
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.2 Well-Architected reliability); Domain 3 (task 3.2 using multiple AZs for high availability; task 3.4 Elastic Load Balancing)"
+
+sections:
+  terms:
+    - term: High availability (HA)
+      simple: A system that keeps working even when some of its parts fail.
+      technical: The ability of a system to remain operational and accessible for a high percentage of time, achieved by eliminating single points of failure and detecting and recovering from failures quickly.
+      example: A website that stays up when one of its two data centres loses power.
+      relevance: The single most common design goal in AWS exam scenarios.
+    - term: Availability (as a number)
+      simple: The percentage of time a system is working.
+      technical: Uptime divided by total time over a period, often expressed in "nines" (99.9% is "three nines").
+      example: 99.9% availability allows about 8 hours 46 minutes of downtime per year.
+      relevance: Helps you compare designs and read service level agreements.
+    - term: Single point of failure (SPOF)
+      simple: One part that, if it breaks, brings the whole system down.
+      technical: A component without redundancy whose failure causes the entire service to fail.
+      example: One database server with no standby; one internet link; one AZ.
+      relevance: Finding and removing SPOFs is how you design for HA. Exam questions often hide one.
+    - term: Redundancy
+      simple: Having extra copies of important parts, so one can take over if another fails.
+      technical: Duplicating components (active-active or active-passive) so that the failure of one doesn't interrupt service.
+      example: Two web servers in two AZs behind a load balancer.
+      relevance: The basic tool of high availability.
+    - term: Health check
+      simple: A regular "are you OK?" test that a load balancer or service sends to each server.
+      technical: A periodic probe (for example an HTTP request to /health) whose result marks a target healthy or unhealthy, so traffic is routed only to healthy targets.
+      example: The load balancer calls /health every 5 seconds; two failures in a row mark the server unhealthy.
+      relevance: Without health checks, a load balancer keeps sending users to broken servers.
+    - term: Load balancer
+      simple: A traffic director that spreads users across several servers and skips any that are broken.
+      technical: A component that distributes incoming requests across a pool of targets based on rules and target health. In AWS, Elastic Load Balancing (Application, Network and Gateway Load Balancers).
+      example: An Application Load Balancer in two AZs sending HTTP requests to healthy web servers.
+      relevance: Together with multiple AZs, the standard HA pattern for web tiers.
+    - term: Failover
+      simple: Automatically switching to a backup when the main part fails.
+      technical: The process of moving service from a failed primary component to a standby or remaining healthy components, automatically or manually.
+      example: Amazon RDS Multi-AZ promoting its standby in another AZ when the primary fails.
+      relevance: How HA designs recover. The exam contrasts automatic and manual failover.
+    - term: SLA (service level agreement)
+      simple: A provider's written promise about availability, and what you get if they miss it.
+      technical: A contractual commitment, such as a monthly uptime percentage, with service credits if it isn't met.
+      example: AWS publishes SLAs for services like EC2, S3 and RDS, many of which assume a multi-AZ deployment.
+      relevance: An SLA describes compensation, not a guarantee. Your own design determines your availability.
+
+  interview:
+    beginner:
+      - question: What does high availability mean?
+        modelAnswer: >-
+          The system keeps serving users even when individual components fail. You get there by removing single points of
+          failure with redundancy, detecting failures with health checks, and recovering automatically, for example by
+          running servers in several Availability Zones behind a load balancer.
+      - question: What is a single point of failure? Give an example.
+        modelAnswer: >-
+          A component whose failure stops the whole system because nothing can take over, such as a single database
+          server, a single network link, or running everything in one Availability Zone.
+    intermediate:
+      - question: How does a load balancer contribute to high availability?
+        modelAnswer: >-
+          It spreads traffic over several targets, ideally in different AZs, and runs health checks. When a target fails
+          its checks it stops receiving traffic, and the remaining healthy targets keep serving. When the target recovers
+          and passes the checks again, it's put back into rotation automatically.
+      - question: What is the difference between high availability and fault tolerance?
+        modelAnswer: >-
+          High availability aims to minimise downtime, and may allow a brief interruption or reduced capacity during
+          recovery. Fault tolerance means no interruption at all when a component fails, usually through fully
+          redundant, simultaneously running components, at higher cost. (The next lesson covers fault tolerance.)
+    advanced:
+      - question: Two components in series each have 99.9% availability. What's the combined availability, and how do you improve it?
+        modelAnswer: >-
+          In series both must work, so 0.999 × 0.999 ≈ 99.8%: worse than either alone. Improve it by adding redundancy in
+          parallel. Two independent 99.9% components where either is enough give 1 − (0.001 × 0.001) = 99.9999%. That's why
+          each tier is duplicated across independent AZs, and why dependencies (DNS, auth, databases) need HA too.
+
+  check:
+    - question: >-
+        In the demonstration, how long did it take for the stopped server to be marked unhealthy, and which two
+        target-group settings decided that?
+      hints:
+        - Look at the options in step 2.
+        - Multiply the interval by the threshold.
+      answer: >-
+        About 10 seconds plus a little Floci processing: the health check ran every 5 seconds
+        (--health-check-interval-seconds 5) and needed 2 consecutive failures (--unhealthy-threshold-count 2). Two more
+        successes (--healthy-threshold-count 2) brought it back.
+    - question: A company runs two web servers behind a load balancer, both in ap-south-1a. Is this highly available? What would you change?
+      hints:
+        - What happens if the whole AZ has a problem?
+        - Where else could the second server be?
+      answer: >-
+        Only partly. It survives one server failing, but the AZ is a single point of failure. Put the servers in at least
+        two AZs (ideally in an Auto Scaling group), and enable the load balancer in those AZs.
+    - question: Roughly how much downtime per month does 99.9% availability allow, and what about 99.99%?
+      hints:
+        - A 30-day month has 43,200 minutes.
+        - 99.9% means 0.1% can be down.
+      answer: >-
+        99.9% allows about 43 minutes per month (0.1% of 43,200). 99.99% allows about 4.3 minutes per month. Each extra
+        nine cuts allowed downtime by a factor of ten, and usually costs significantly more to achieve.
