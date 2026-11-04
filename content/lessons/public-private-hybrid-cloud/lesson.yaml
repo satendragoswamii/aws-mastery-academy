@@ -1,0 +1,121 @@
+title: Public, private and hybrid cloud
+summary: >-
+  The three cloud deployment models (public, private and hybrid), plus multi-cloud and community cloud, when each
+  makes sense, how hybrid environments are connected, and a hybrid backup with off-site recovery built on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - data-centres
+topics:
+  - deployment-models
+  - hybrid-cloud
+  - private-cloud
+  - backup
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.1 deployment models: cloud, hybrid, on-premises; task 1.3 migration strategies)"
+
+sections:
+  terms:
+    - term: Public cloud
+      simple: Computing you rent from a big provider over the internet, on hardware shared (safely) with other customers.
+      technical: Infrastructure owned and operated by a third-party provider and offered to the general public on demand, with logical isolation between tenants.
+      example: Running your website on Amazon EC2 in the Mumbai Region.
+      relevance: AWS is a public cloud. AWS calls this deployment model simply "cloud" (cloud-native, all-in).
+    - term: Private cloud
+      simple: Cloud-style self-service computing that only one organisation uses, usually in its own data centre.
+      technical: Infrastructure provisioned for exclusive use by a single organisation, offering cloud characteristics (self-service, pooling, elasticity) through virtualisation and automation, on-premises or hosted.
+      example: A bank running OpenStack or VMware in its own data centre so its teams can create VMs through a portal.
+      relevance: AWS exam wording often calls this "on-premises" or "private cloud deployment".
+    - term: Hybrid cloud
+      simple: Using your own data centre and a public cloud together, connected so they work as one.
+      technical: A deployment that connects on-premises or private-cloud infrastructure with public-cloud resources, sharing data and workloads between them.
+      example: Keeping a core banking database on-prem while running the mobile app's backend on AWS, linked by AWS Direct Connect.
+      relevance: The most common real-world state during and after migrations. Tested directly in CLF-C02.
+    - term: Multi-cloud
+      simple: Using more than one public cloud provider.
+      technical: An architecture that deliberately spreads workloads across two or more public-cloud providers.
+      example: Analytics on one provider, the main application on AWS.
+      relevance: Common in large companies, but it adds complexity. Not the same as hybrid.
+    - term: Community cloud
+      simple: A cloud shared by several organisations with the same needs, like a group of government departments.
+      technical: Infrastructure shared by a specific community of organisations with common concerns such as security, compliance or mission.
+      example: AWS GovCloud (US) serves US government agencies and their contractors.
+      relevance: One of the four NIST deployment models; less common in exam questions than the other three.
+    - term: Site-to-Site VPN
+      simple: An encrypted tunnel over the internet between your office network and your AWS network.
+      technical: An IPsec connection between a customer gateway on-premises and a virtual private gateway or transit gateway in AWS.
+      example: Branch offices reaching an AWS-hosted application privately over their normal internet line.
+      relevance: The quick, cheap way to connect hybrid environments. Encrypted, but over the public internet.
+    - term: AWS Direct Connect
+      simple: A private, dedicated network cable from your data centre to AWS, not using the public internet.
+      technical: A dedicated network connection from an on-premises location to AWS through a Direct Connect location, giving consistent bandwidth and latency.
+      example: A stock broker linking its data centre to AWS with a 10 Gbps Direct Connect line.
+      relevance: The exam answer for "consistent, high-bandwidth, private connection to AWS".
+    - term: AWS Outposts
+      simple: AWS hardware installed in your own building, managed by AWS.
+      technical: A fully managed service that extends AWS infrastructure, services and APIs to on-premises facilities using AWS-designed racks or servers.
+      example: A factory running EC2 instances on an Outpost next to its machines for very low latency.
+      relevance: Recognise it as the answer to "run AWS services on-premises".
+
+  interview:
+    beginner:
+      - question: What is the difference between public, private and hybrid cloud?
+        modelAnswer: >-
+          Public cloud is rented from a provider such as AWS and shared (with isolation) with other customers. Private cloud
+          is cloud-style infrastructure used by one organisation only, usually in its own data centre. Hybrid cloud connects
+          the two so workloads and data can move between them.
+      - question: Give one reason a company might choose a hybrid cloud.
+        modelAnswer: >-
+          It has systems that must stay on-premises, for regulatory, latency or migration-timing reasons, but wants
+          the cloud's elasticity and services for everything else, such as new applications, backups or burst capacity.
+    intermediate:
+      - question: What's the difference between hybrid cloud and multi-cloud?
+        modelAnswer: >-
+          Hybrid combines on-premises or private infrastructure with a public cloud. Multi-cloud uses two or more public-cloud
+          providers. A company can be both. Multi-cloud adds operational complexity: different tooling, skills, security
+          models and networking for each provider.
+      - question: When would you choose Direct Connect instead of a Site-to-Site VPN?
+        modelAnswer: >-
+          When you need consistent latency, high bandwidth or large, steady data transfer, or policy requires traffic
+          not to cross the public internet. VPN is quicker and cheaper to set up and is fine for lower or variable traffic.
+          A common design uses Direct Connect as primary and VPN as backup.
+    advanced:
+      - question: A company says "we'll stay hybrid forever to avoid lock-in." What are the trade-offs, and how would you advise them?
+        modelAnswer: >-
+          Hybrid keeps flexibility and supports systems that genuinely must stay on-prem, but it costs more to operate:
+          two environments, connectivity, duplicated skills and tooling, and a larger security surface. Lock-in is better
+          handled by portable layers (containers, Infrastructure as Code, open data formats) and a clear exit plan than by
+          running everything twice. Advise deciding per workload: what must stay, what benefits from moving, and the cost
+          of each over time, and revisit at each hardware refresh.
+
+  check:
+    - question: >-
+        A hospital must keep its patient database on its own servers, but wants to use AWS for its appointment
+        website and for off-site backups. Which deployment model is this, and how might the two sides be connected?
+      hints:
+        - Some systems stay in the building, some go to AWS.
+        - Two connection options appeared in this lesson; one uses the internet, one doesn't.
+      answer: >-
+        Hybrid cloud. They can connect with a Site-to-Site VPN (encrypted over the internet, quick to set up) or AWS
+        Direct Connect (a dedicated private link with consistent performance), or Direct Connect with VPN as a backup.
+    - question: >-
+        In the demonstration you deleted the October invoice from the "office" folder, yet the restore at the DR site
+        still contained it. Why, and what option would have changed that?
+      hints:
+        - Look at what `s3 sync` does by default with files that disappear from the source.
+        - Look at the dry-run step.
+      answer: >-
+        `s3 sync` copies new and changed files but never deletes from the destination unless you add `--delete`. The dry
+        run showed that `--delete` would have removed the cloud copy too. For backups that's dangerous, so leave it off
+        (or add versioning) so accidental deletions on-prem don't destroy the backup.
+    - question: Is "we use AWS and Microsoft Azure" an example of hybrid cloud? Explain.
+      hints:
+        - Are both of those public clouds?
+        - Hybrid needs a particular kind of infrastructure on one side.
+      answer: >-
+        No, that's multi-cloud: two public-cloud providers. Hybrid means combining on-premises or private-cloud
+        infrastructure with a public cloud. If the company also connects its own data centre, it's both hybrid and multi-cloud.
