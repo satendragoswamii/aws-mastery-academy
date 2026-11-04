@@ -32,12 +32,12 @@
 
 - **No `compose.yaml`.** Colima has no compose plugin, and installing one would mean editing `~/.docker/config.json`. `scripts/db.sh` does the same with plain `docker`.
 - **`postgres` driver pinned to 3.x.** 4.0.0 is brand new, and Drizzle is tested against 3.x.
-- **AI instructor:** no paid API key, at the user's request. Phase 8 will use built-in content plus optional free local Ollama.
+- **AI instructor:** no paid API key, by design. Phase 8 will use built-in content plus optional free local Ollama.
 
 ## Known limitations
 
 - Two moderate `npm audit` advisories remain in **dev-only** tooling (drizzle-kit's bundled esbuild, eslint's minimatch). They don't ship and don't apply to how these tools are used. Production dependencies report 0 vulnerabilities.
-- Browser-based (Playwright) E2E tests are deferred to Phase 3 because of low disk space (about 19 GB free). The HTTP-level E2E above ran manually.
+- Browser-based (Playwright) E2E tests are deferred to Phase 3 to keep the dev machine's disk usage down. The HTTP-level E2E above ran manually.
 
 ## Untouched (as required)
 
