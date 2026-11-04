@@ -1,0 +1,119 @@
+title: Data centres
+summary: >-
+  What is physically inside a data centre (power, cooling, network, security), how data centres are rated for
+  reliability, how AWS groups them into Availability Zones and Regions, and choosing where your data lives on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - traditional-it-infrastructure
+topics:
+  - data-centres
+  - physical-security
+  - availability-zones
+  - regions
+  - data-residency
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.2 AWS global infrastructure); Domain 2 (physical security as AWS's responsibility)"
+
+sections:
+  terms:
+    - term: Data centre
+      simple: A large, secure building full of servers, with lots of power, cooling and internet connectivity.
+      technical: A facility that houses compute, storage and network equipment with redundant power, cooling, connectivity and physical security, engineered for continuous operation.
+      example: One AWS data centre typically holds tens of thousands of servers.
+      relevance: The physical foundation of every cloud service. In AWS, data centres are grouped into Availability Zones.
+    - term: Colocation ("colo")
+      simple: Renting space, power and cooling in someone else's data centre for your own servers.
+      technical: A model where the facility provider supplies space, power, cooling, connectivity and physical security, while the customer owns and operates the servers.
+      example: A company renting two racks in a Mumbai colocation facility.
+      relevance: A middle step between a server room and the cloud. AWS Direct Connect locations are often in colocation facilities.
+    - term: Redundancy (N+1, 2N)
+      simple: Having spare equipment so one failure doesn't stop everything.
+      technical: Provisioning more components than strictly needed. N+1 adds one spare unit; 2N duplicates the entire system.
+      example: Four cooling units where three are enough (N+1).
+      relevance: Redundancy inside data centres, and across them, is what high availability is built on.
+    - term: UPS (uninterruptible power supply)
+      simple: Big batteries that keep servers running for the seconds or minutes until the generator starts.
+      technical: An electrical system that provides instantaneous backup power from batteries and conditions the supply, bridging to generator power.
+      example: Mains power cuts out; the UPS carries the load for 30 seconds while diesel generators start.
+      relevance: Part of the physical layer AWS manages for you under the shared responsibility model.
+    - term: PUE (Power Usage Effectiveness)
+      simple: A score for how much extra electricity a data centre uses beyond the computers themselves. Lower is better; 1.0 is perfect.
+      technical: Total facility energy divided by IT equipment energy.
+      example: A PUE of 1.5 means for every 1 kW the servers use, another 0.5 kW goes on cooling and other overhead.
+      relevance: Large cloud providers reach much better efficiency than typical server rooms, part of the economies of scale and of the Sustainability pillar.
+    - term: Availability Zone (AZ)
+      simple: One or more data centres close to each other that act as one unit, separate from other AZs.
+      technical: One or more discrete data centres with redundant power, networking and connectivity in an AWS Region, physically separated from other AZs but connected by low-latency links.
+      example: ap-south-1a, ap-south-1b and ap-south-1c in the Mumbai Region.
+      relevance: Deploying across multiple AZs is the standard way to survive a data-centre failure. Heavily tested.
+    - term: Region
+      simple: A geographic area where AWS has several Availability Zones.
+      technical: A physical location containing multiple, isolated, physically separate AZs. Each Region is independent of the others.
+      example: ap-south-1 (Mumbai), ap-south-2 (Hyderabad), us-east-1 (N. Virginia).
+      relevance: You choose a Region for latency, compliance, service availability and price.
+    - term: Data residency
+      simple: The rule about which country or area your data is allowed to be stored in.
+      technical: Legal or policy requirements that constrain the geographic location where data is stored and processed.
+      example: A regulator requiring that certain payment data stays in India.
+      relevance: AWS data stays in the Region you choose unless you move it, which is how you meet residency rules.
+
+  interview:
+    beginner:
+      - question: What are the main things a data centre needs to keep servers running?
+        modelAnswer: >-
+          Reliable power (mains supply plus UPS and generators), cooling, network connectivity (ideally several
+          providers), and physical security. All of it is built with redundancy so one failure doesn't stop the servers.
+      - question: What is an Availability Zone?
+        modelAnswer: >-
+          One or more data centres in an AWS Region with their own power, cooling and networking, physically separated
+          from the other AZs in that Region but connected to them with fast, low-latency links.
+    intermediate:
+      - question: Why can't you visit an AWS data centre, and how do you know it's secure?
+        modelAnswer: >-
+          AWS restricts physical access to staff with a verified business need, and doesn't publish exact locations, as a
+          security control. Customers rely on independent third-party audits (such as SOC reports, ISO 27001 and PCI DSS
+          attestations), which are available on demand in AWS Artifact.
+      - question: A bucket was created without specifying a Region and the company must keep data in India. What went wrong and how do you fix it?
+        modelAnswer: >-
+          The bucket was created in the default Region for that profile, possibly us-east-1, so the data is in the US.
+          S3 buckets can't be moved between Regions. Create a new bucket in ap-south-1 or ap-south-2, copy the data across,
+          verify it, delete the original, and set the default Region (and preventive controls such as SCPs) to stop it recurring.
+    advanced:
+      - question: How does AWS's Region and AZ design change how you design for failure compared with a single on-prem data centre?
+        modelAnswer: >-
+          On-prem, a single building is a single point of failure, and a second site is a major project. In AWS, multiple
+          isolated AZs are available in every Region at no extra setup, so the baseline is to spread instances and use
+          Multi-AZ managed services, surviving the loss of a data centre. For disaster recovery or regional outages you
+          replicate to a second Region. You design for failure as a normal event rather than treating it as an exception.
+
+  check:
+    - question: Name four systems inside a data centre that exist only to keep the servers running, and say what each protects against.
+      hints:
+        - Think about electricity, heat, network and people.
+        - What happens in a power cut, before the generator starts?
+      answer: >-
+        Any four of: UPS (short power interruptions), generators (long power outages), cooling (overheating), multiple
+        network providers (loss of a network link), fire suppression (fire), and physical security such as fences,
+        guards and biometrics (intruders or theft).
+    - question: >-
+        In the demonstration, why did `get-bucket-location` return `null` for the us-east-1 bucket but
+        `ap-south-1` for the Mumbai bucket?
+      hints:
+        - Which Region was S3's original, default Region?
+        - Re-read the note after step 4.
+      answer: >-
+        us-east-1 is S3's original Region, so for historical reasons buckets there have no location constraint and the
+        API returns null. Every other Region requires a LocationConstraint, which the API returns. Floci reproduces this
+        real AWS behaviour.
+    - question: A company runs its web servers in one AZ. The data centre loses power. What happens, and what single design change prevents it?
+      hints:
+        - How many AZs were they using?
+        - Think about the "multi" in Multi-AZ.
+      answer: >-
+        The application goes down because all its servers were in the failed AZ. Spreading the servers (behind a load
+        balancer) across at least two AZs, and using Multi-AZ for the database, lets the healthy AZs keep serving.
