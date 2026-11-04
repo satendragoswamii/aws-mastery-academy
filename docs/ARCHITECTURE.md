@@ -52,6 +52,20 @@ Planned for the Phase 6 lab runner, all behind this guard:
 - Destructive operations need explicit confirmation in the UI.
 - Every run logged to `lab_runs`.
 
+## Content model (Phase 3)
+
+- `src/content/curriculum.ts` holds the whole learning path (levels, then modules, then lessons) as data.
+- `content/lessons/<slug>/` holds one lesson: `lesson.yaml` plus a Markdown file per prose section. It's loaded and validated by `src/content/load.ts` against `src/content/schema.ts`.
+- Every lesson must contain all 14 sections A–N. A lesson is *available* only when its folder exists and validates; otherwise it's *planned* and can't be opened.
+- Lesson Markdown is rendered without raw HTML, so content can't inject scripts.
+
+## Progress tracking
+
+- Opening a section calls the `visitSection` Server Action **from the browser after render**. Prefetching never runs effects, so prefetches can't fake progress.
+- A visit sets the lesson to `in_progress` (never downgrading `mastered` or `needs_revision`), moves the resume point, and records today in `activity_days`, using `APP_TIMEZONE` for the streak.
+- **Nothing becomes `mastered` from reading.** Only the assessment engine (Phase 10) can set it.
+- Dashboard numbers come from `buildDashboard()`, a pure function over real records: mastered/total, started, services studied, streak, quiz average, weak topics below 70%, and revision suggestions.
+
 ## Data model (Phase 2)
 
 | Table | Purpose |

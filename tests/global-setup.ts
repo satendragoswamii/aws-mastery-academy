@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { runMigrations } from "../scripts/migrate";
+import { runMigrations } from "../src/db/migrate";
 
 /** Brings the TEST database schema up to date before any test runs. Never touches the app DB. */
 export default async function setup() {

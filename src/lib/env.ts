@@ -15,6 +15,18 @@ const schema = z.object({
     .regex(/^[a-z]{2}(-[a-z]+)+-\d$/, "FLOCI_REGION must look like us-east-1")
     .default("us-east-1"),
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(14),
+  /** Your local time zone; learning streaks follow your midnight. */
+  APP_TIMEZONE: z
+    .string()
+    .default("Asia/Kolkata")
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "APP_TIMEZONE must be an IANA time zone such as Asia/Kolkata"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

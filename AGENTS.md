@@ -16,4 +16,5 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **No paid APIs.** The AI instructor must work with no key (built-in content) and optionally a free local model (Ollama).
 - Cache Components is on: anything reading cookies/DB/time renders inside `<Suspense>`; the DAL (`src/lib/auth/dal.ts`) is the only place that authorises a request.
 - Tests use `TEST_DATABASE_URL` only and wipe it; never point tests at the app database.
+- Lesson commands must be run against Floci before publishing, with real output pasted and `verifiedOn` set. State every Floci-vs-AWS difference you observe.
 - Build in phases; each phase ends with tests passing and a report in `docs/reports/`.

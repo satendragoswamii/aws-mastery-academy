@@ -10,6 +10,7 @@ src/
   lib/floci/        endpoint guard, health check
   lib/env.ts        validated server configuration
   proxy.ts          optimistic auth redirect
+content/lessons/    lesson content: one folder per lesson (see below)
 drizzle/            generated SQL migrations (commit these)
 scripts/            setup-env, migrate, create-user, db.sh
 tests/unit/         pure logic
@@ -23,11 +24,22 @@ docs/               architecture, this guide, phase reports
 2. Run `npm run db:generate -- --name <what-changed>`, then review the new SQL in `drizzle/`.
 3. Run `npm run db:migrate`. Tests migrate the test DB automatically.
 
+## Writing a lesson
+
+1. Add (or find) the lesson's slug and title in `src/content/curriculum.ts`.
+2. Create `content/lessons/<slug>/` with:
+   - `lesson.yaml`: title (must match the curriculum), summary, minutes, prerequisites, topics, `labTier`, `verifiedOn`, certifications, plus `sections.terms`, `sections.interview` and `sections.check`
+   - one Markdown file per prose section: `what.md why.md how.md architecture.md real-world.md demo.md cli.md troubleshooting.md security.md certification.md assignment.md`
+3. **Run every Floci command yourself** with `--endpoint-url http://localhost:4566`, paste the real output, and set `verifiedOn`. Note anywhere Floci behaves differently from real AWS.
+4. Use `~~~` code fences and ASCII-only arrows (`^ v < >`) in diagrams; wide glyphs like ▲ break alignment.
+5. Run `npm test`. The schema rejects missing sections, placeholder text, thin sections and commands without the local endpoint.
+
 ## Testing
 
 - `npm test` runs every test. The global setup migrates `academy_test` and refuses to run if it equals `DATABASE_URL`.
 - Integration tests **truncate the test database**. Your learning data lives in `academy` and is never touched.
 - `FLOCI_LIVE=1 npm test` adds a live check against Floci.
+- `npm run build && npm run test:e2e` runs the browser tests against the production build on port 3100. They reset the TEST DB and seed a temporary `e2e` user.
 
 ## Troubleshooting
 

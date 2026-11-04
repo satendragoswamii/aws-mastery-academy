@@ -1,0 +1,132 @@
+title: What is cloud computing?
+summary: >-
+  What "the cloud" really is, the problem it solves, the five characteristics
+  every cloud service shares, and your first resource created and released on Floci.
+estimatedMinutes: 45
+prerequisites: []
+topics:
+  - cloud-concepts
+  - cloud-benefits
+  - nist-characteristics
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.1, benefits of the AWS Cloud)"
+
+sections:
+  terms:
+    - term: Cloud computing
+      simple: Renting computers, storage and software over the internet instead of owning them, and paying only for what you use.
+      technical: On-demand network access to a shared pool of configurable computing resources that can be rapidly provisioned and released with minimal management effort (NIST SP 800-145).
+      example: Creating an S3 bucket with one command instead of buying a storage server.
+      relevance: Every AWS service is an application of this idea. It's the foundation of every certification.
+    - term: Server
+      simple: A powerful computer whose job is to serve other computers, for example by sending web pages, storing files or answering database queries.
+      technical: A machine (physical or virtual) running server software that listens for and responds to network requests from clients.
+      example: The computer that sends you your Gmail inbox when you open it.
+      relevance: Most AWS compute services (EC2, ECS, Lambda) give you servers in different forms.
+    - term: Data centre
+      simple: A large, secure building full of servers, with lots of power, cooling and internet connectivity.
+      technical: A facility housing compute, storage and network equipment, with redundant power, cooling, physical security and connectivity.
+      example: AWS operates many data centres grouped into Availability Zones inside each Region.
+      relevance: Understanding data centres explains Regions, Availability Zones and high availability (later in Level 1).
+    - term: Provisioning
+      simple: Creating or setting up a resource so it's ready to use.
+      technical: Allocating and configuring infrastructure resources, usually through an API call.
+      example: "`aws s3 mb` provisions a bucket."
+      relevance: In AWS provisioning takes seconds, which is the core of agility and of Infrastructure as Code.
+    - term: Multi-tenancy
+      simple: Many customers sharing the same hardware while staying completely separate, like flats in one apartment building.
+      technical: An architecture where one physical infrastructure serves multiple isolated customers (tenants), with logical isolation between them.
+      example: Your EC2 instance may run on the same physical host as another company's, isolated by the hypervisor.
+      relevance: It's why the cloud is cheap (shared cost) and why isolation and security matter so much.
+    - term: Elasticity
+      simple: Automatically growing when demand goes up and shrinking when it goes down.
+      technical: The ability to provision and release resources dynamically to match workload demand, often automatically.
+      example: An exam-results site that runs 2 servers normally and 50 on results day.
+      relevance: A favourite exam topic. You'll implement it with Auto Scaling.
+    - term: Pay-as-you-go
+      simple: Paying only for what you actually use, like an electricity bill.
+      technical: A consumption-based pricing model with no long-term commitment, billed per unit of usage (seconds, GB-months, requests).
+      example: S3 charges per GB stored per month plus per request.
+      relevance: Drives every cost-optimisation decision and the whole Billing domain of CLF-C02.
+    - term: API (Application Programming Interface)
+      simple: A defined way for one program to ask another program to do something.
+      technical: A contract of requests and responses. AWS APIs are HTTPS endpoints that accept signed requests and return structured responses.
+      example: "`aws s3 mb` sends a CreateBucket API request."
+      relevance: Everything in AWS is an API call. The Console, CLI and SDKs are all API clients.
+    - term: Endpoint
+      simple: The web address you send requests to for one AWS service.
+      technical: A URL for a service in a Region, such as https://s3.us-east-1.amazonaws.com.
+      example: In your lab the endpoint is http://localhost:4566 (Floci).
+      relevance: Pointing at the wrong endpoint is how people accidentally use real AWS, or the wrong Region.
+    - term: Emulator (Floci)
+      simple: A program on your own computer that pretends to be AWS, so you can practise for free and safely.
+      technical: A local service that implements AWS API wire protocols and returns AWS-shaped responses, without real AWS infrastructure.
+      example: Floci answering `s3 mb` at http://localhost:4566.
+      relevance: Safe, free practice. You must still learn where it differs from real AWS.
+
+  interview:
+    beginner:
+      - question: In simple terms, what is cloud computing?
+        modelAnswer: >-
+          Using computing resources (servers, storage, databases, networking) owned and operated by a provider like AWS,
+          over the internet, on demand, and paying only for what you use, instead of buying and running your own hardware.
+      - question: Name three benefits of moving to the cloud.
+        modelAnswer: >-
+          No large up-front cost (pay as you go), the ability to scale up and down with demand instead of guessing capacity,
+          and speed: resources in minutes instead of weeks. Others: economies of scale, no data-centre maintenance, global reach.
+    intermediate:
+      - question: What is the difference between scalability and elasticity?
+        modelAnswer: >-
+          Scalability is the ability to handle more load by adding resources. Elasticity is doing that dynamically in both
+          directions, often automatically, so capacity follows demand and you stop paying when demand falls.
+      - question: Pay-as-you-go is cheaper, so why do some companies see higher bills after moving to the cloud?
+        modelAnswer: >-
+          They copy on-premises habits: oversized resources running 24/7, idle or forgotten resources, no autoscaling,
+          and no cost monitoring. The cloud is cheaper only when you use its elasticity and actively manage cost.
+    advanced:
+      - question: A company runs a steady, predictable workload at high utilisation 24/7. Is the cloud always cheaper? How would you decide?
+        modelAnswer: >-
+          Not necessarily on raw compute price. Compare total cost of ownership (hardware refresh, data-centre space, power,
+          staff, downtime risk, speed of delivery) rather than server price alone. In the cloud, steady workloads should use
+          commitment discounts (Savings Plans or Reserved Instances) instead of on-demand pricing. The decision also weighs
+          agility, global reach and managed services, not just cost.
+
+  check:
+    - question: >-
+        A clothing website gets 10× its normal traffic for one week during a festival sale. Which cloud characteristic
+        and which AWS advantage best explain why the cloud suits this company?
+      hints:
+        - Think about what happens to capacity before, during and after the sale.
+        - One NIST characteristic is about growing and shrinking. One AWS advantage is about not having to predict.
+      answer: >-
+        Rapid elasticity (capacity grows for the sale and shrinks afterwards) and "stop guessing capacity". A good answer
+        also mentions "trade fixed expense for variable expense": they pay for the extra servers only during the sale week.
+    - question: >-
+        In the demonstration, which step showed "measured service", and how would that turn into money in real AWS?
+      hints:
+        - Look at the step where you saw a number next to the file.
+        - S3 bills per amount stored and per request.
+      answer: >-
+        Step 4: listing the bucket showed the object's size (35 bytes). Real AWS measures storage (GB-months) and requests,
+        so you'd be billed for the bytes stored over time plus each upload, list and download request.
+    - question: >-
+        You run `aws s3 ls` and get "InvalidAccessKeyId". What most likely went wrong, and why is this error actually reassuring?
+      hints:
+        - Compare the command with the lab commands. Is something missing?
+        - Where does the CLI send requests by default?
+      answer: >-
+        The --endpoint-url http://localhost:4566 option is missing, so the request went to real AWS, which rejected your dummy
+        credentials. It's reassuring because it shows the dummy credentials stopped the request from doing anything in a real account.
+    - question: Explain resource pooling and multi-tenancy using an analogy, then say why it makes the cloud cheaper.
+      hints:
+        - Think of buildings where many people share infrastructure but have private spaces.
+        - Who pays for idle capacity when many customers share it?
+      answer: >-
+        Like flats in an apartment building: residents share the structure, lifts and water supply, but each flat is private
+        and locked. Cloud customers share the provider's hardware with strong isolation between them. Sharing raises
+        utilisation and spreads costs across many customers (economies of scale), so each pays less than owning dedicated hardware.
