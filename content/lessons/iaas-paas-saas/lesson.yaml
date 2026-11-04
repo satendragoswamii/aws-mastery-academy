@@ -44,7 +44,7 @@ sections:
       simple: A service where AWS does the hard operational work (patching, backups, scaling) for you.
       technical: A service in which the provider operates the underlying infrastructure and software, including maintenance, availability and often scaling, exposing only an API and configuration.
       example: Amazon RDS takes automated backups and applies database patches during a maintenance window you choose.
-      relevance: "Use a managed service" is a common correct answer when a question asks how to reduce operational overhead.
+      relevance: The answer "use a managed service" is a common correct answer when a question asks how to reduce operational overhead.
     - term: Operational overhead
       simple: All the routine work needed just to keep a system running.
       technical: The ongoing effort of patching, monitoring, backup, scaling, capacity management and incident handling that doesn't add business features.
