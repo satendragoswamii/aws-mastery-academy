@@ -1,0 +1,122 @@
+title: Traditional IT and on-premises servers
+summary: >-
+  How companies ran computing before the cloud, what owning servers really costs (CapEx, capacity guessing,
+  long lead times), and a side-by-side feel for "order a server" versus launching one on Floci in under a second.
+estimatedMinutes: 40
+prerequisites:
+  - what-is-cloud-computing
+topics:
+  - on-premises
+  - capex-vs-opex
+  - capacity-planning
+  - total-cost-of-ownership
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.1 benefits of the AWS Cloud; task 1.4 cloud economics)"
+
+sections:
+  terms:
+    - term: On-premises ("on-prem")
+      simple: Computers that a company owns and keeps in its own building.
+      technical: Infrastructure physically located in, and operated by, the organisation that uses it, in its own server room or data centre.
+      example: A bank's servers in a locked room in its head office basement.
+      relevance: The baseline every cloud benefit is compared against. Exam questions often contrast "on-premises" with "AWS Cloud".
+    - term: Capital expenditure (CapEx)
+      simple: A big up-front payment for something you'll own and use for years.
+      technical: Spending on long-lived physical assets, recorded on the balance sheet and depreciated over their useful life (often 3–5 years for servers).
+      example: Paying ₹40 lakh today for servers, storage and network switches.
+      relevance: The advantage "trade fixed (capital) expense for variable expense" is one of the six AWS advantages of cloud computing.
+    - term: Operational expenditure (OpEx)
+      simple: Ongoing payments for what you use, like a monthly bill.
+      technical: Recurring spending on running costs, expensed in the period it occurs, with no asset ownership.
+      example: A monthly AWS bill that rises in busy months and falls in quiet ones.
+      relevance: Cloud spending is mostly OpEx, which changes how finance teams budget for IT.
+    - term: Capacity planning
+      simple: Guessing how much computer power you'll need in the future, so you can buy it in time.
+      technical: Forecasting peak resource demand over the hardware's lifetime and provisioning ahead of it, including headroom for growth and failure.
+      example: Buying enough servers in January for the Diwali sale in November, plus 30% spare.
+      relevance: The cloud's "stop guessing capacity" advantage exists because on-prem capacity planning is so often wrong.
+    - term: Procurement lead time
+      simple: How long it takes from deciding you need a server to actually being able to use it.
+      technical: The elapsed time for approval, purchase order, vendor delivery, racking, cabling, OS installation and hand-over.
+      example: Six to twelve weeks is common for a new physical server in a large company.
+      relevance: Explains the "increase speed and agility" advantage of the cloud.
+    - term: Utilisation
+      simple: How much of a computer's power you're actually using.
+      technical: The percentage of a resource's capacity (CPU, memory, storage) consumed over time.
+      example: A server that averages 12% CPU is 88% idle, yet you paid for 100% of it.
+      relevance: Low on-prem utilisation is the main reason "economies of scale" make cloud cheaper.
+    - term: Total cost of ownership (TCO)
+      simple: Everything a server really costs you, not just its price tag.
+      technical: The full lifetime cost of an asset, including purchase, space, power, cooling, network, licences, staff, maintenance, downtime and disposal.
+      example: A ₹5 lakh server can cost ₹15 lakh or more over five years once you include power, staff and support contracts.
+      relevance: Migration business cases compare TCO, never the hardware price alone.
+    - term: Hardware refresh
+      simple: Replacing old servers with new ones every few years.
+      technical: A planned replacement cycle (typically 3–5 years) driven by warranty end, failure rates and performance needs.
+      example: A company spending a quarter of its IT budget every four years just to replace ageing hardware.
+      relevance: In the cloud AWS refreshes the hardware; you just choose newer instance types.
+
+  interview:
+    beginner:
+      - question: What does "on-premises" mean?
+        modelAnswer: >-
+          The organisation owns its servers, storage and networking and runs them in its own building or a data centre it
+          controls. It buys the hardware up front and its own staff install, operate, secure and replace it.
+      - question: What is the difference between CapEx and OpEx?
+        modelAnswer: >-
+          CapEx is a large up-front purchase of an asset you own for years, like buying servers. OpEx is an ongoing cost
+          for what you use, like a monthly cloud bill. Moving to the cloud largely trades CapEx for OpEx.
+    intermediate:
+      - question: Why do on-premises servers often run at low utilisation?
+        modelAnswer: >-
+          Because they must be sized for the expected peak, plus growth and spare capacity for failures, and that peak
+          lasts only a small fraction of the time. Buying takes weeks, so teams buy early and buy big. The result is
+          hardware that sits mostly idle for most of its life.
+      - question: A manager says "our servers are already paid for, so running them is free." How would you respond?
+        modelAnswer: >-
+          The purchase is a sunk cost, but running them is not free: power, cooling, space, support contracts, licences,
+          staff time, security patching and the risk of failure all continue. Refresh is also coming. A fair comparison
+          uses total cost of ownership over the next few years, not the purchase price already spent.
+    advanced:
+      - question: Give two situations where staying on-premises can be the right decision, and how you would still reduce risk.
+        modelAnswer: >-
+          (1) Strict data-residency or regulatory rules with no compliant cloud option, or (2) a large, very steady
+          workload on recently bought hardware where migration cost outweighs savings in the short term. Specialised
+          hardware or ultra-low-latency needs next to factory equipment are other examples. To reduce risk: keep a hybrid
+          design, use cloud for backup and disaster recovery, standardise on portable tooling (containers, Infrastructure
+          as Code), and re-evaluate at the next hardware refresh. AWS also offers on-premises options such as Outposts.
+
+  check:
+    - question: >-
+        A startup expects 1,000 users but isn't sure; it could be 100 or 100,000. Explain the two ways on-premises
+        capacity planning could go wrong for them, and what each costs.
+      hints:
+        - One mistake is buying too much, the other is buying too little.
+        - What happens to money in the first case, and to customers in the second?
+      answer: >-
+        Over-provisioning: they buy for 100,000 users and get 100, so capital is wasted on idle hardware.
+        Under-provisioning: they buy for 1,000 and get 100,000, so the site slows down or crashes and they lose customers
+        and reputation, and new hardware takes weeks to arrive. The cloud avoids both by scaling with real demand.
+    - question: List at least five costs that are part of the TCO of an on-premises server but not part of its purchase price.
+      hints:
+        - Think about the building, electricity and people.
+        - Think about what happens over five years, and at the end.
+      answer: >-
+        Any five of: rack space or floor space, electricity, cooling, network and internet connectivity, physical security,
+        operating system and software licences, hardware support contracts, staff time to install, patch and monitor,
+        backup systems, spare parts, downtime when it fails, and disposal or refresh at end of life.
+    - question: >-
+        In the demonstration, how long did `run-instances` take, and what would the equivalent step cost in time and
+        money on-premises? Name one thing real AWS would charge you for that Floci doesn't.
+      hints:
+        - Look at the `time` line under step 2.
+        - Think back to the procurement journey in the "Why" section.
+      answer: >-
+        About 0.6 seconds to get an instance ID and private IP. On-prem the same step means approval, purchase, delivery,
+        racking and installation: typically 6–12 weeks and a large up-front payment. Real AWS would bill the running
+        instance per second (and its EBS volume per GB-month); Floci charges nothing.
