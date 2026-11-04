@@ -1,0 +1,35 @@
+import {
+  BookMarked,
+  Briefcase,
+  Building2,
+  ClipboardCheck,
+  FlaskConical,
+  HelpCircle,
+  Lightbulb,
+  Network,
+  Rocket,
+  ShieldCheck,
+  Award,
+  Terminal,
+  Wrench,
+  Cog,
+  type LucideIcon,
+} from "lucide-react";
+import type { SectionId } from "@/content/schema";
+
+export const SECTION_ICONS: Record<SectionId, LucideIcon> = {
+  what: Lightbulb,
+  why: HelpCircle,
+  how: Cog,
+  terms: BookMarked,
+  architecture: Network,
+  "real-world": Building2,
+  demo: FlaskConical,
+  cli: Terminal,
+  troubleshooting: Wrench,
+  security: ShieldCheck,
+  certification: Award,
+  interview: Briefcase,
+  check: ClipboardCheck,
+  assignment: Rocket,
+};

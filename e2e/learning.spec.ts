@@ -7,7 +7,7 @@ async function signIn(page: Page) {
   await page.getByLabel("Username").fill("e2e");
   await page.getByLabel("Password").fill("e2e-password-123");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: /Welcome back/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
 }
 
 test.describe.configure({ mode: "serial" });
@@ -34,7 +34,7 @@ test("learning a lesson section by section and resuming exactly there", async ({
   await expect(page).toHaveURL(new RegExp(`/learn/${LESSON}/what$`));
   await expect(page.getByRole("heading", { name: "The simple version" })).toBeVisible();
 
-  await page.getByRole("link", { name: /B\. Why does it exist\? →/ }).click();
+  await page.getByRole("link", { name: /Next.*B\. Why does it exist\?/ }).click();
   await expect(page).toHaveURL(new RegExp(`/learn/${LESSON}/why$`));
   await expect(page.getByRole("heading", { name: "The problem the cloud solves" })).toBeVisible();
 
@@ -43,7 +43,7 @@ test("learning a lesson section by section and resuming exactly there", async ({
     await page.goto("/");
     await expect(page.getByText("You stopped at B. Why does it exist?")).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 15_000 });
-  await expect(page.getByText(/^1\s*day$/)).toBeVisible(); // streak
+  await expect(page.getByText("1 day streak")).toBeVisible(); // streak
   await expect(page.getByText("0 / ")).toBeVisible(); // reading is not mastery
 
   await page.getByRole("link", { name: "Resume where I stopped" }).click();
@@ -52,7 +52,7 @@ test("learning a lesson section by section and resuming exactly there", async ({
 
 test("the curriculum shows status and planned lessons can't be opened", async ({ page }) => {
   await signIn(page);
-  await page.getByRole("link", { name: "Curriculum" }).click();
+  await page.getByRole("link", { name: "Curriculum", exact: true }).click();
   const row = page.getByRole("listitem").filter({ hasText: "What is cloud computing?" });
   await expect(row.getByText("In progress")).toBeVisible();
   await expect(page.getByRole("link", { name: "Data centres" })).toHaveCount(0);
@@ -68,14 +68,14 @@ test("bookmarks: add on a section, see it on the notes page, remove it", async (
   await signIn(page);
   await page.goto(`/learn/${LESSON}/cli`);
   await page.getByRole("button", { name: "Bookmark this section" }).click();
-  await expect(page.getByRole("button", { name: "🔖 Bookmarked" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bookmarked", exact: true })).toBeVisible();
 
   await page.goto("/notes");
   await expect(page.getByRole("link", { name: "What is cloud computing?" }).last()).toBeVisible();
   await expect(page.getByText("H. AWS CLI commands")).toBeVisible();
 
   await page.goto(`/learn/${LESSON}/cli`);
-  await page.getByRole("button", { name: "🔖 Bookmarked" }).click();
+  await page.getByRole("button", { name: "Bookmarked", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bookmark this section" })).toBeVisible();
 });
 

@@ -94,7 +94,33 @@ export function buildDashboard(input: DashboardInput) {
       .map((e) => ({ slug: e.slug, title: e.title, reason: "Covers a weak topic" })),
   ];
 
+  // "Your path": the next few curriculum entries starting from the recommended lesson.
+  const startIndex = recommendedEntry
+    ? input.catalogue.findIndex((e) => e.slug === recommendedEntry.slug)
+    : 0;
+  const path = input.catalogue.slice(Math.max(0, startIndex), Math.max(0, startIndex) + 5).map((e) => ({
+    slug: e.slug,
+    title: e.title,
+    available: e.available,
+    status: e.available ? statusOf(e.slug) : ("planned" as const),
+  }));
+
+  // Per-level breakdown for the progress card.
+  const levelIds = [...new Set(input.catalogue.map((e) => e.levelId))];
+  const levels = levelIds.map((levelId) => {
+    const entries = input.catalogue.filter((e) => e.levelId === levelId);
+    return {
+      levelId,
+      total: entries.length,
+      available: entries.filter((e) => e.available).length,
+      started: entries.filter((e) => statusOf(e.slug) !== "not_started").length,
+      mastered: entries.filter((e) => statusOf(e.slug) === "mastered").length,
+    };
+  });
+
   return {
+    path,
+    levels,
     totals: {
       curriculumLessons: total,
       availableLessons: available.length,

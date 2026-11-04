@@ -103,6 +103,28 @@ describe("buildDashboard", () => {
     expect(d.revision).toEqual([{ slug: "b", title: "B", reason: "Covers a weak topic" }]);
   });
 
+  it("shows the path ahead from the recommended lesson, marking planned lessons", () => {
+    const d = buildDashboard(
+      input({
+        progress: new Map([["a", { status: "mastered", currentSection: "assignment" }]]),
+        resume: { lessonSlug: "a", section: "assignment" },
+      }),
+    );
+    expect(d.path.map((p) => [p.slug, p.status])).toEqual([
+      ["b", "not_started"],
+      ["c", "planned"],
+      ["s3", "not_started"],
+    ]);
+  });
+
+  it("breaks progress down per level", () => {
+    const d = buildDashboard(input({ progress: new Map([["a", { status: "mastered", currentSection: "x" }]]) }));
+    expect(d.levels).toEqual([
+      { levelId: "level-1", total: 3, available: 2, started: 1, mastered: 1 },
+      { levelId: "level-3", total: 1, available: 1, started: 0, mastered: 0 },
+    ]);
+  });
+
   it("reports the streak", () => {
     const d = buildDashboard(input({ activeDays: ["2026-11-03", "2026-11-04"] }));
     expect(d.streak).toEqual({ current: 2, longest: 2, studiedToday: true });

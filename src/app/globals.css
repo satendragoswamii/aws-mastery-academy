@@ -1,113 +1,186 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. Warm, friendly palette:
+ *   brand  = orange (energy, "let's go")
+ *   ink    = deep navy (calm, readable)
+ *   canvas = soft warm off-white
+ */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
+
+  --color-brand-50: #fff7ed;
+  --color-brand-100: #ffedd5;
+  --color-brand-200: #fed7aa;
+  --color-brand-300: #fdba74;
+  --color-brand-400: #fb923c;
+  --color-brand-500: #f97316;
+  --color-brand-600: #ea580c;
+  --color-brand-700: #c2410c;
+
+  --color-ink-900: #0f1b2d;
+  --color-ink-800: #1b2a41;
+  --color-ink-700: #2b3d58;
+
+  --color-canvas: #faf8f5;
 }
 
-/* ---------- Lesson prose ---------- */
-.lesson-prose {
-  line-height: 1.7;
-  font-size: 1rem;
+html {
+  background: var(--color-canvas);
 }
-/* For short Markdown inside small UI text (e.g. terminology cards). */
-.lesson-prose-inherit {
-  font-size: inherit;
-  line-height: inherit;
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-400);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- Lesson prose: comfortable, friendly reading ---------- */
+.lesson-prose {
+  font-size: 1.0625rem; /* 17px */
+  line-height: 1.75;
+  color: var(--color-slate-700);
+  max-width: 72ch;
 }
 .lesson-prose > * + * {
-  margin-top: 0.9em;
+  margin-top: 1em;
 }
 .lesson-prose h2 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-top: 1.8em;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-ink-900);
+  margin-top: 2em;
+  letter-spacing: -0.01em;
 }
 .lesson-prose h2:first-child {
   margin-top: 0;
 }
 .lesson-prose h3 {
-  font-size: 1.08rem;
-  font-weight: 600;
-  margin-top: 1.4em;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--color-ink-800);
+  margin-top: 1.6em;
+}
+.lesson-prose ul,
+.lesson-prose ol {
+  padding-left: 1.4em;
 }
 .lesson-prose ul {
-  list-style: disc;
-  padding-left: 1.4em;
+  list-style: none;
+}
+.lesson-prose ul > li {
+  position: relative;
+}
+.lesson-prose ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.05em;
+  top: 0.72em;
+  width: 0.42em;
+  height: 0.42em;
+  border-radius: 999px;
+  background: var(--color-brand-400);
 }
 .lesson-prose ol {
   list-style: decimal;
-  padding-left: 1.4em;
+}
+.lesson-prose ol > li::marker {
+  color: var(--color-brand-600);
+  font-weight: 700;
 }
 .lesson-prose li + li {
-  margin-top: 0.3em;
+  margin-top: 0.4em;
 }
 .lesson-prose a {
-  color: var(--color-sky-700);
+  color: var(--color-brand-700);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .lesson-prose strong {
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--color-ink-900);
 }
+.lesson-prose em {
+  color: var(--color-slate-600);
+}
+
+/* "> Remember / Key idea / Important habit" callouts */
 .lesson-prose blockquote {
-  border-left: 4px solid var(--color-amber-400);
-  background: var(--color-amber-50);
-  padding: 0.6em 1em;
-  border-radius: 0 0.5rem 0.5rem 0;
+  position: relative;
+  background: var(--color-brand-50);
+  border: 1px solid var(--color-brand-200);
+  padding: 0.9em 1.1em 0.9em 3em;
+  border-radius: 14px;
+  color: var(--color-ink-800);
 }
+.lesson-prose blockquote::before {
+  content: "💡";
+  position: absolute;
+  left: 0.95em;
+  top: 0.85em;
+  font-size: 1.15em;
+}
+
 .lesson-prose :not(pre) > code {
   font-family: var(--font-mono);
-  font-size: 0.88em;
-  background: var(--color-zinc-100);
-  padding: 0.1em 0.35em;
-  border-radius: 0.3rem;
+  font-size: 0.86em;
+  background: var(--color-slate-100);
+  color: var(--color-ink-800);
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+  border: 1px solid var(--color-slate-200);
 }
 .lesson-prose pre {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  line-height: 1.5;
-  background: var(--color-zinc-900);
-  color: var(--color-zinc-100);
-  padding: 1em;
-  border-radius: 0.6rem;
+  line-height: 1.55;
+  background: var(--color-ink-900);
+  color: #e6edf6;
+  padding: 1.1em 1.2em;
+  border-radius: 14px;
   overflow-x: auto;
+  max-width: none;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
+.lesson-prose pre code {
+  font-family: inherit;
+}
+
 .lesson-prose .table-wrap {
   overflow-x: auto;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 14px;
 }
 .lesson-prose table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
 }
 .lesson-prose th,
 .lesson-prose td {
-  border: 1px solid var(--color-zinc-200);
-  padding: 0.45em 0.7em;
+  padding: 0.6em 0.9em;
   text-align: left;
   vertical-align: top;
+  border-bottom: 1px solid var(--color-slate-200);
+}
+.lesson-prose tr:last-child td {
+  border-bottom: none;
 }
 .lesson-prose th {
-  background: var(--color-zinc-100);
-  font-weight: 600;
+  background: var(--color-slate-50);
+  font-weight: 700;
+  color: var(--color-ink-800);
 }
 
-@media (prefers-color-scheme: dark) {
-  .lesson-prose a {
-    color: var(--color-sky-400);
-  }
-  .lesson-prose blockquote {
-    background: color-mix(in oklab, var(--color-amber-400) 12%, transparent);
-  }
-  .lesson-prose :not(pre) > code,
-  .lesson-prose th {
-    background: var(--color-zinc-800);
-  }
-  .lesson-prose th,
-  .lesson-prose td {
-    border-color: var(--color-zinc-700);
-  }
-  .lesson-prose pre {
-    background: var(--color-black);
-  }
+/* Short Markdown inside small UI text (e.g. terminology cards). */
+.lesson-prose-inherit {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  max-width: none;
 }

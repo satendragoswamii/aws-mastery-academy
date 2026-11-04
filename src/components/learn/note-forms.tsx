@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Pencil, Save, Trash2 } from "lucide-react";
 import {
   addNoteAction,
   deleteNoteAction,
@@ -9,6 +10,9 @@ import {
 } from "@/app/actions/learning";
 
 const initial: NoteFormState = { error: null, savedAt: null, body: null };
+
+const textareaClass =
+  "w-full rounded-xl border border-slate-300 bg-white p-3 text-[15px] outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100";
 
 /*
  * React resets a <form action> after submission. On a rejected save the server
@@ -22,7 +26,7 @@ export function AddNoteForm({ slug }: { slug: string | null }) {
   return (
     <form action={action} className="flex flex-col gap-2">
       {slug && <input type="hidden" name="slug" value={slug} />}
-      <label htmlFor="new-note" className="text-sm text-zinc-500">
+      <label htmlFor="new-note" className="text-sm font-semibold text-slate-600">
         New note
       </label>
       <textarea
@@ -32,19 +36,20 @@ export function AddNoteForm({ slug }: { slug: string | null }) {
         name="body"
         required
         rows={3}
-        placeholder="Write what you understood, a question, or a command to remember…"
-        className="w-full rounded-md border border-zinc-300 bg-transparent p-2 text-sm dark:border-zinc-700"
+        placeholder="What did you understand? A question? A command to remember?"
+        className={textareaClass}
       />
       {state.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm font-semibold text-red-600">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-md bg-zinc-900 px-3 py-1.5 text-sm text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="inline-flex items-center gap-1.5 self-start rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-800 disabled:opacity-60"
       >
+        <Save aria-hidden className="h-4 w-4" />
         {pending ? "Saving…" : "Save note"}
       </button>
     </form>
@@ -70,10 +75,10 @@ export function NoteItem({ id, body, updatedAt }: { id: string; body: string; up
           required
           rows={4}
           aria-label="Edit note"
-          className="w-full rounded-md border border-zinc-300 bg-transparent p-2 text-sm dark:border-zinc-700"
+          className={textareaClass}
         />
         {state.error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm font-semibold text-red-600">
             {state.error}
           </p>
         )}
@@ -81,11 +86,15 @@ export function NoteItem({ id, body, updatedAt }: { id: string; body: string; up
           <button
             type="submit"
             disabled={pending}
-            className="rounded-md bg-zinc-900 px-3 py-1 text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+            className="rounded-xl bg-ink-900 px-4 py-1.5 font-semibold text-white hover:bg-ink-800 disabled:opacity-60"
           >
             Save
           </button>
-          <button type="button" onClick={() => setEditing(false)} className="rounded-md border px-3 py-1">
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="rounded-xl border border-slate-300 px-4 py-1.5 font-semibold text-slate-700 hover:bg-slate-50"
+          >
             Cancel
           </button>
         </div>
@@ -95,11 +104,15 @@ export function NoteItem({ id, body, updatedAt }: { id: string; body: string; up
 
   return (
     <div>
-      <p className="whitespace-pre-wrap text-sm">{body}</p>
-      <div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
-        <span>{updatedAt}</span>
-        <button type="button" onClick={() => setEditing(true)} className="underline">
-          Edit
+      <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink-800">{body}</p>
+      <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+        <span className="mr-2">{updatedAt}</span>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-semibold hover:bg-white hover:text-ink-900"
+        >
+          <Pencil aria-hidden className="h-3.5 w-3.5" /> Edit
         </button>
         <form
           action={deleteNoteAction}
@@ -108,8 +121,11 @@ export function NoteItem({ id, body, updatedAt }: { id: string; body: string; up
           }}
         >
           <input type="hidden" name="id" value={id} />
-          <button type="submit" className="text-red-600 underline">
-            Delete
+          <button
+            type="submit"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-semibold text-red-600 hover:bg-red-50"
+          >
+            <Trash2 aria-hidden className="h-3.5 w-3.5" /> Delete
           </button>
         </form>
       </div>
