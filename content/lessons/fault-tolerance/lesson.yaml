@@ -1,0 +1,120 @@
+title: Fault tolerance
+summary: >-
+  How fault tolerance differs from high availability, the techniques that let a system keep working through failures
+  with no interruption (redundancy, decoupling, retries, idempotency, dead-letter queues), and a crash-proof order queue on Floci.
+estimatedMinutes: 45
+prerequisites:
+  - high-availability
+topics:
+  - fault-tolerance
+  - decoupling
+  - retries
+  - idempotency
+  - dead-letter-queues
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.2 Well-Architected reliability, loosely coupled design); Domain 3 (task 3.7 application integration: Amazon SQS)"
+
+sections:
+  terms:
+    - term: Fault tolerance
+      simple: A system that keeps working perfectly when a part fails, without users noticing anything.
+      technical: The property of a system to continue operating correctly, without interruption or data loss, when one or more of its components fail.
+      example: An order that's never lost even if the server processing it crashes halfway.
+      relevance: Stronger than high availability, and more expensive. The exam tests the difference.
+    - term: Fault
+      simple: Something that goes wrong inside the system, like a crashed server or a dropped network packet.
+      technical: A defect or abnormal condition in a component. A failure is when a fault causes the service to deviate from what it should do.
+      example: A disk fault that a RAID array hides, so the service never fails.
+      relevance: Fault-tolerant design stops faults from turning into failures.
+    - term: Loose coupling (decoupling)
+      simple: Connecting parts of a system so that if one is slow or broken, the others keep working.
+      technical: An architecture in which components interact through intermediaries (queues, topics, event buses) with minimal direct dependency, so they can fail, scale and change independently.
+      example: A website puts orders in a queue; a separate worker processes them whenever it can.
+      relevance: A Well-Architected design principle and a frequent exam answer ("use Amazon SQS to decouple").
+    - term: Message queue
+      simple: A waiting line for tasks. One part of the system adds tasks, another takes them out and does them.
+      technical: A durable buffer that stores messages from producers until consumers receive, process and delete them. Amazon SQS is AWS's fully managed queue.
+      example: An ama-l1-orders queue holding orders until the packing service processes them.
+      relevance: The main AWS tool for decoupling and fault tolerance between components.
+    - term: Visibility timeout
+      simple: How long a task is hidden from other workers after one worker picks it up. If that worker doesn't finish in time, the task comes back.
+      technical: The period after an SQS message is received during which it's invisible to other consumers. If the consumer doesn't delete it before the timeout ends, the message becomes visible again for another attempt.
+      example: A 30-second visibility timeout. A worker that crashes after 10 seconds simply lets the message reappear 20 seconds later.
+      relevance: How SQS guarantees that a crashed consumer doesn't lose work.
+    - term: Dead-letter queue (DLQ)
+      simple: A separate queue where tasks go after failing too many times, so they don't block everything else.
+      technical: A queue that receives messages from a source queue after they have been received more times than the redrive policy's maxReceiveCount, isolating "poison" messages for investigation.
+      example: A malformed order that crashes the worker twice is moved to ama-l1-orders-dlq.
+      relevance: Prevents endless retry loops and preserves failed messages for analysis.
+    - term: Idempotency
+      simple: Doing the same thing twice has the same effect as doing it once.
+      technical: A property of an operation where repeating it with the same input doesn't change the result beyond the first application, which makes retries safe.
+      example: Recording "order ORD-2001 is paid" twice still means it's paid once, not charged twice.
+      relevance: Queues and retries can deliver a message more than once, so consumers must be idempotent.
+    - term: Durability
+      simple: How unlikely it is that stored data is ever lost.
+      technical: The probability that data survives over time without loss or corruption, usually achieved by storing redundant copies on independent devices and facilities.
+      example: Amazon S3 is designed for 99.999999999% (11 nines) durability of objects.
+      relevance: Durability (not losing data) is different from availability (being able to reach it right now).
+
+  interview:
+    beginner:
+      - question: What is the difference between high availability and fault tolerance?
+        modelAnswer: >-
+          High availability minimises downtime but may allow a brief interruption or reduced capacity while it recovers.
+          Fault tolerance means the system keeps working with no interruption and no data loss when a component fails,
+          usually because redundant components are already running and work is never held only in one place.
+      - question: How does a queue make a system more fault tolerant?
+        modelAnswer: >-
+          The producer and consumer no longer depend on each other being up at the same moment. If the consumer crashes,
+          messages wait safely in the queue, and if a consumer fails mid-task the message becomes visible again and is retried.
+    intermediate:
+      - question: Why must SQS consumers be idempotent?
+        modelAnswer: >-
+          Standard SQS queues deliver each message at least once, and a message can be received again if the consumer
+          crashes, or is too slow, before deleting it. If processing isn't idempotent, a retry could charge a customer
+          twice or ship two parcels. Using a unique order ID and checking whether it was already processed makes retries safe.
+      - question: What problem does a dead-letter queue solve?
+        modelAnswer: >-
+          A "poison" message, one that always fails, would otherwise be retried forever, wasting capacity and possibly
+          blocking other work. With a redrive policy, after maxReceiveCount failed attempts the message moves to the DLQ,
+          where it's kept for investigation and can be redriven after the bug is fixed.
+    advanced:
+      - question: Design a payment step that tolerates a worker crash between charging the card and recording the payment.
+        modelAnswer: >-
+          Send each payment request with a unique idempotency key. The worker charges the card using that key (payment
+          providers ignore duplicate charges for the same key) and records the result in a database with a conditional
+          write keyed on the payment ID, then deletes the SQS message. If it crashes anywhere, the message reappears and
+          the retry is safe: the charge isn't duplicated and the record is written exactly once. Add a DLQ with alarms for
+          payments that keep failing, and set the visibility timeout above the worst-case processing time.
+
+  check:
+    - question: >-
+        In the demonstration, why did the second receive-message right after the first one return nothing, and why did
+        the order come back about 5 seconds later?
+      hints:
+        - Look at the queue attribute you set in step 2.
+        - The worker never called delete-message.
+      answer: >-
+        The first receive made the message invisible for the visibility timeout (5 seconds). Because the worker
+        "crashed" without deleting it, the timeout expired and SQS made it visible again, so the order wasn't lost.
+    - question: After the second failed attempt, where did the order go and why?
+      hints:
+        - Look at the RedrivePolicy you set.
+        - What does maxReceiveCount mean?
+      answer: >-
+        To the dead-letter queue ama-l1-orders-dlq. The redrive policy had maxReceiveCount 2, so once the message had been
+        received twice without being deleted, SQS moved it to the DLQ instead of offering it again.
+    - question: Is this design fault tolerant, highly available, or both? A website writes orders directly to one database server in one AZ.
+      hints:
+        - What happens to new orders if that server is down for 2 minutes?
+        - Is there anything that holds orders while the database is unavailable?
+      answer: >-
+        Neither. The database server and its AZ are single points of failure, and orders placed while it's down are
+        lost or rejected. Adding Multi-AZ improves availability; adding a queue between the website and the database
+        worker means orders are held safely and processed later, which makes order intake fault tolerant.
