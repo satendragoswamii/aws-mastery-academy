@@ -1,0 +1,115 @@
+title: Virtualization
+summary: >-
+  How one physical computer runs many isolated virtual machines, what a hypervisor does, why virtualization made the
+  cloud possible, how AWS's Nitro System works, and a look at a real virtual machine running on your own Mac.
+estimatedMinutes: 40
+prerequisites:
+  - disaster-recovery
+topics:
+  - virtualization
+  - hypervisor
+  - virtual-machines
+  - nitro
+  - instance-types
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-05"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.1 economies of scale, resource pooling); Domain 3 (task 3.3 EC2 instance types)"
+
+sections:
+  terms:
+    - term: Virtualization
+      simple: Using software to split one physical computer into several separate "virtual" computers.
+      technical: The abstraction of physical hardware (CPU, memory, storage, network) so that multiple isolated virtual machines can share it, each with its own operating system.
+      example: One server with 96 CPUs running 40 virtual machines for different customers.
+      relevance: The technology that makes cloud resource pooling and EC2 possible.
+    - term: Virtual machine (VM)
+      simple: A computer made of software that behaves exactly like a real one, with its own operating system.
+      technical: An isolated execution environment that emulates a complete computer system and runs a guest operating system on virtualised hardware provided by a hypervisor.
+      example: An EC2 instance; the Colima VM on your Mac.
+      relevance: An EC2 instance is a VM (except bare-metal instances).
+    - term: Hypervisor
+      simple: The software that creates and runs virtual machines, and keeps them apart.
+      technical: A layer (type 1 runs directly on hardware; type 2 runs on a host OS) that allocates physical resources to VMs, schedules them and enforces isolation between them.
+      example: AWS Nitro Hypervisor (based on KVM), VMware ESXi, Microsoft Hyper-V, Apple's Virtualization framework.
+      relevance: The hypervisor is AWS's responsibility under the shared responsibility model.
+    - term: Host and guest
+      simple: The host is the real machine. Guests are the virtual machines running on it.
+      technical: The host provides physical resources and runs the hypervisor; guests are VMs with their own guest operating systems.
+      example: Your Mac is the host; the Colima Ubuntu VM is a guest.
+      relevance: The guest OS is a key term in the shared responsibility model. You patch it on EC2.
+    - term: vCPU
+      simple: A virtual CPU, a share of a real processor given to a VM.
+      technical: A virtual processor presented to a guest. On most EC2 x86 instances one vCPU is one hardware thread of a physical core.
+      example: A t3.micro has 2 vCPUs.
+      relevance: Instance types are described by vCPUs and memory.
+    - term: AWS Nitro System
+      simple: AWS's own special hardware and lightweight hypervisor that make EC2 faster and more secure.
+      technical: A combination of dedicated Nitro Cards (offloading networking, storage and management), a Nitro Security Chip and a minimal KVM-based Nitro Hypervisor, which together give near bare-metal performance and strong isolation.
+      example: Modern instance families such as M5, C6g and T3 run on Nitro.
+      relevance: Explains why EC2 VMs perform close to physical servers and why AWS operators can't access customer memory.
+    - term: Bare-metal instance
+      simple: Renting a whole physical server with no virtual machine layer in between.
+      technical: An EC2 instance type that gives the operating system direct access to the host's processor and memory, without a hypervisor running guests on it.
+      example: m5.metal, c5.metal.
+      relevance: For special needs such as running your own hypervisor or licensing tied to physical cores.
+
+  interview:
+    beginner:
+      - question: What is virtualization?
+        modelAnswer: >-
+          Running several isolated virtual machines, each with its own operating system, on one physical computer. A
+          hypervisor shares out the CPU, memory, storage and network, and keeps the VMs separate from each other.
+      - question: What is a hypervisor?
+        modelAnswer: >-
+          The software layer that creates and runs virtual machines: it allocates physical resources to them, schedules
+          them and isolates them. Type 1 hypervisors run directly on hardware (like the Nitro Hypervisor or ESXi); type 2
+          run on top of a normal operating system.
+    intermediate:
+      - question: Why was virtualization essential for cloud computing?
+        modelAnswer: >-
+          It allows resource pooling and multi-tenancy: one physical server is shared by many customers safely, which raises
+          utilisation and lowers cost (economies of scale). VMs can be created, resized and destroyed by software in
+          seconds, which enables on-demand self-service and elasticity, and they can be moved or replaced without touching hardware.
+      - question: In the shared responsibility model, who patches the hypervisor and who patches the guest OS on EC2?
+        modelAnswer: >-
+          AWS patches and secures the hypervisor and the physical hosts. The customer patches and secures the guest
+          operating system and everything installed in the instance.
+    advanced:
+      - question: What are the trade-offs between VMs, bare-metal instances and containers?
+        modelAnswer: >-
+          VMs give strong isolation and any OS, with small overhead (small on Nitro). Bare metal removes the hypervisor for
+          workloads that need direct hardware access, their own hypervisor or per-core licensing, but you lose fine-grained
+          sizing. Containers share the host kernel, so they start in seconds and pack densely, but isolation is weaker than a
+          VM's, which is why AWS runs containers inside VMs or micro-VMs (Fargate uses Firecracker) for multi-tenant isolation.
+
+  check:
+    - question: >-
+        In the demonstration, your Mac reported one operating system, CPU count and memory, and the Colima VM another.
+        Which was the host, which was the guest, and why did the guest have fewer CPUs?
+      hints:
+        - Compare the first and second commands' output.
+        - Who decided how much CPU and memory the VM gets?
+      answer: >-
+        The Mac (macOS, 10 CPUs, 16 GiB) is the host; the Colima Ubuntu VM (2 CPUs, 4 GiB) is the guest. The hypervisor
+        gives the VM only the share of resources it was configured with (here 2 CPUs and 4 GiB), leaving the rest for the
+        host and other VMs, which is exactly how EC2 instance sizes work.
+    - question: Why is virtualization the reason the cloud can be cheaper than a server room?
+      hints:
+        - Think about utilisation from the Traditional IT lesson.
+        - How many customers can share one physical server?
+      answer: >-
+        A server room's dedicated servers often sit at low utilisation. Virtualization lets a provider pack many customers'
+        VMs onto each physical server, so the hardware is busy most of the time and its cost is spread across many
+        customers: resource pooling and economies of scale.
+    - question: A customer's software licence is priced per physical CPU core and must run on dedicated hardware. Which EC2 options fit?
+      hints:
+        - Some EC2 options don't share hardware with other customers.
+        - One option gives access to the physical server itself.
+      answer: >-
+        EC2 Dedicated Hosts (a physical server dedicated to you, with visibility of sockets and cores for licensing) or
+        bare-metal instances. Dedicated Instances also avoid sharing hardware with other customers, but don't give
+        host-level visibility for per-core licensing.
