@@ -1,0 +1,118 @@
+title: Cloud networking basics
+summary: >-
+  IP addresses and CIDR ranges, private networks in the cloud (VPCs), public and private subnets, route tables,
+  internet gateways and security groups, built step by step as a small shop network on Floci.
+estimatedMinutes: 50
+prerequisites:
+  - containers
+topics:
+  - networking
+  - vpc
+  - cidr
+  - subnets
+  - route-tables
+  - security-groups
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-05"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.4 network services: VPC, subnets, internet gateway, security groups, network ACLs)"
+
+sections:
+  terms:
+    - term: IP address
+      simple: The address of a device on a network, like a house number for computers.
+      technical: A numeric identifier for a network interface. IPv4 addresses are 32 bits, written as four numbers 0–255 (e.g. 10.20.1.15).
+      example: 10.20.1.15 is a private address; 13.234.10.5 might be a public one.
+      relevance: Every EC2 instance, load balancer and database in a VPC has one.
+    - term: CIDR block
+      simple: A way to write a whole range of IP addresses in one short form.
+      technical: Classless Inter-Domain Routing notation, an address plus a prefix length (e.g. 10.20.0.0/16) where the prefix is how many leading bits are fixed. A /16 contains 65,536 addresses, a /24 contains 256.
+      example: 10.20.1.0/24 means 10.20.1.0 to 10.20.1.255.
+      relevance: You choose CIDR blocks for every VPC and subnet. Overlaps cause real problems.
+    - term: Private IP ranges
+      simple: Address ranges reserved for internal networks, which can't be reached directly from the internet.
+      technical: RFC 1918 ranges 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16, used inside VPCs and home or office networks.
+      example: The default VPC uses 172.31.0.0/16; your home Wi-Fi probably uses 192.168.x.x.
+      relevance: VPCs use private ranges, with gateways to reach the internet.
+    - term: VPC (Virtual Private Cloud)
+      simple: Your own private, isolated network inside AWS.
+      technical: A logically isolated virtual network in an AWS Region, defined by one or more CIDR blocks, in which you launch resources and control routing and access.
+      example: A VPC with CIDR 10.20.0.0/16 for an online shop.
+      relevance: The foundation of AWS networking and a frequent exam topic.
+    - term: Subnet
+      simple: A smaller section of your VPC, placed in one Availability Zone.
+      technical: A range of IP addresses (a CIDR block within the VPC's) located in a single AZ. A subnet is public if its route table sends internet traffic to an internet gateway; otherwise it's private.
+      example: 10.20.1.0/24 in ap-south-1a for web servers (public); 10.20.2.0/24 for databases (private).
+      relevance: Subnets are how you place resources in AZs and separate public from private.
+    - term: Route table
+      simple: The list of directions that tells network traffic where to go next.
+      technical: A set of routes (destination CIDR → target) associated with subnets. Every VPC route table includes a local route for the VPC's own CIDR.
+      example: 0.0.0.0/0 → igw-953cfc0a sends all internet-bound traffic to the internet gateway.
+      relevance: A subnet's route table decides whether it's public or private.
+    - term: Internet gateway (IGW)
+      simple: The door between your VPC and the internet.
+      technical: A horizontally scaled, redundant VPC component that allows traffic between the VPC and the internet for resources with public IP addresses, used as a route target.
+      example: Attaching igw-953cfc0a to the shop VPC and routing 0.0.0.0/0 to it.
+      relevance: Without one, nothing in the VPC can reach or be reached from the internet directly.
+    - term: Security group
+      simple: A firewall around each server that decides which traffic is allowed in and out.
+      technical: A stateful, instance-level virtual firewall with allow rules only. Return traffic for allowed connections is automatically permitted.
+      example: Allow TCP 443 from 0.0.0.0/0 into the web servers' security group.
+      relevance: The main tool for controlling access to EC2, RDS and load balancers. Heavily tested.
+
+  interview:
+    beginner:
+      - question: What is a VPC?
+        modelAnswer: >-
+          A Virtual Private Cloud: your own logically isolated network in an AWS Region, with an IP address range you
+          choose. You divide it into subnets in different AZs and control routing and access to the resources inside.
+      - question: What makes a subnet public?
+        modelAnswer: >-
+          Its route table has a route for internet traffic (0.0.0.0/0) pointing to an internet gateway. Resources in it
+          also need a public IP address to be reachable. A private subnet has no route to an internet gateway.
+    intermediate:
+      - question: How many usable IP addresses does a /24 subnet have in AWS, and why?
+        modelAnswer: >-
+          251. A /24 has 256 addresses, and AWS reserves 5 in every subnet: the network address, the VPC router, the DNS
+          server, one reserved for future use, and the broadcast address.
+      - question: What's the difference between a security group and a network ACL?
+        modelAnswer: >-
+          A security group is stateful, applies to network interfaces (instances), and has only allow rules. A network ACL
+          is stateless (return traffic must be explicitly allowed), applies to a whole subnet, and supports both allow and
+          deny rules evaluated in number order.
+    advanced:
+      - question: Why should you plan VPC CIDR ranges carefully, even for a small first project?
+        modelAnswer: >-
+          VPCs that need to connect (peering, Transit Gateway, VPN or Direct Connect to on-premises) can't have
+          overlapping CIDRs, and you can't change a VPC's primary CIDR later. Teams that pick 10.0.0.0/16 everywhere end up
+          unable to connect environments, or forced into NAT workarounds and rebuilds. Using an IP address plan (for
+          example, a distinct /16 per environment and Region, and leaving room for growth) avoids this.
+
+  check:
+    - question: >-
+        In the demonstration, both subnets showed 251 available addresses. Where did the other 5 of the 256 go?
+      hints:
+        - It happens in every AWS subnet.
+        - Think about the network address, the router and DNS.
+      answer: >-
+        AWS reserves 5 addresses in every subnet: the first four (network address, VPC router, DNS, and one reserved for
+        future use) and the last (broadcast), so a /24 has 256 − 5 = 251 usable addresses.
+    - question: >-
+        Both of your subnets were created the same way. What exactly made ama-l1-public-a public and ama-l1-private-a
+        private?
+      hints:
+        - Look at the route-table output in step 6.
+        - Which route table is each subnet associated with?
+      answer: >-
+        The public subnet was associated with the route table containing 0.0.0.0/0 → internet gateway. The private subnet
+        stayed on the VPC's main route table, which has only the local route, so it has no path to the internet.
+    - question: Why did `delete-vpc` fail at the start of the clean-up, and what's the general rule?
+      hints:
+        - Look at the error message.
+        - What still existed inside the VPC?
+      answer: >-
+        DependencyViolation: the VPC still contained subnets, a route table, a security group and an attached internet
+        gateway. The rule is to delete in reverse order of creation, removing dependents before the VPC.
