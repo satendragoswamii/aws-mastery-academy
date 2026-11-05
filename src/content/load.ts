@@ -76,8 +76,13 @@ export function loadAllLessons(dir = LESSONS_DIR): Map<string, Lesson> {
 
 let cache: Map<string, Lesson> | undefined;
 
-/** All authored lessons, validated. Cached per process. */
+/**
+ * All authored lessons, validated.
+ * Production caches them per process (restart or rebuild after adding lessons).
+ * Development re-reads the folder so newly written lessons appear without a restart.
+ */
 export function lessons(): Map<string, Lesson> {
+  if (process.env.NODE_ENV !== "production") return loadAllLessons();
   cache ??= loadAllLessons();
   return cache;
 }

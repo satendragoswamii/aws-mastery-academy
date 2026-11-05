@@ -13,6 +13,7 @@ import {
   toggleBookmark,
   updateNote,
 } from "@/lib/learning/progress";
+import { catalogue } from "@/lib/learning/catalogue";
 import { resetDb, seedUser, testDb } from "../helpers/db";
 
 const { db, sql } = testDb();
@@ -70,9 +71,10 @@ describe("recordSectionVisit", () => {
     const u = await seedUser(db);
     await expect(recordSectionVisit(db, u.id, "not-a-lesson", "what", tz)).rejects.toThrow(InvalidLearningTarget);
     await expect(recordSectionVisit(db, u.id, LESSON, "secret", tz)).rejects.toThrow(InvalidLearningTarget);
-    await expect(recordSectionVisit(db, u.id, "traditional-it-infrastructure", "what", tz)).rejects.toThrow(
-      InvalidLearningTarget, // planned, not yet written
-    );
+    const planned = catalogue().find((e) => !e.available); // a lesson in the curriculum that isn't written yet
+    if (planned) {
+      await expect(recordSectionVisit(db, u.id, planned.slug, "what", tz)).rejects.toThrow(InvalidLearningTarget);
+    }
     expect((await getProgressMap(db, u.id)).size).toBe(0);
   });
 });

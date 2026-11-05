@@ -55,10 +55,12 @@ test("the curriculum shows status and planned lessons can't be opened", async ({
   await page.getByRole("link", { name: "Curriculum", exact: true }).click();
   const row = page.getByRole("listitem").filter({ hasText: "What is cloud computing?" });
   await expect(row.getByText("In progress")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Data centres" })).toHaveCount(0);
+  // A planned (not yet written) lesson is listed but not linked. Uses the last curriculum lesson,
+  // which is written last; update this when the whole curriculum is complete.
+  await expect(page.getByRole("link", { name: "Cost Explorer, Budgets and the Pricing Calculator" })).toHaveCount(0);
   // The not-found UI renders. The HTTP status stays 200 because the layout has already
   // started streaming (documented Next.js behaviour); the page gets robots=noindex.
-  await page.goto("/learn/data-centres");
+  await page.goto("/learn/cost-management");
   await expect(page.getByRole("heading", { name: "This page could not be found." })).toBeVisible();
   await page.goto(`/learn/${LESSON}/not-a-section`);
   await expect(page.getByRole("heading", { name: "This page could not be found." })).toBeVisible();

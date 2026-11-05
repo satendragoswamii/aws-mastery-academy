@@ -1,0 +1,125 @@
+title: Disaster recovery
+summary: >-
+  What counts as a disaster, how RPO and RTO turn business needs into numbers, the four AWS DR strategies from
+  backup-and-restore to multi-site active/active, and three recoveries on Floci (undo a delete, restore a table, copy to a second Region).
+estimatedMinutes: 50
+prerequisites:
+  - fault-tolerance
+topics:
+  - disaster-recovery
+  - rpo-rto
+  - backups
+  - s3-versioning
+  - multi-region
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-04"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.2 Well-Architected reliability); Domain 3 (task 3.2 multiple Regions for disaster recovery; task 3.6 storage backup: S3 versioning, AWS Backup)"
+
+sections:
+  terms:
+    - term: Disaster recovery (DR)
+      simple: The plan and tools for getting your systems and data back after something really bad happens.
+      technical: The policies, procedures and technology used to restore critical systems and data after a disruptive event that normal high-availability measures can't absorb.
+      example: Restoring a shop's database in another Region after its primary Region becomes unavailable.
+      relevance: The exam tests the four AWS DR strategies and the terms RPO and RTO.
+    - term: RPO (recovery point objective)
+      simple: How much recent data you can afford to lose, measured in time.
+      technical: The maximum acceptable age of the data you recover to, which is the maximum period of data loss after a disaster.
+      example: An RPO of 1 hour means backups or replication must capture data at least every hour.
+      relevance: Drives how often you back up or replicate.
+    - term: RTO (recovery time objective)
+      simple: How long you can afford to be down before things are working again.
+      technical: The maximum acceptable time between the disruption and the restoration of service.
+      example: An RTO of 4 hours means the business must be running again within 4 hours of the disaster.
+      relevance: Drives which DR strategy you choose and how much it costs.
+    - term: Backup and restore
+      simple: Regularly saving copies of your data somewhere safe, and rebuilding from them after a disaster.
+      technical: The lowest-cost DR strategy, in which data is backed up (often to another Region) and infrastructure is redeployed only when needed. RPO and RTO are typically hours.
+      example: Nightly DynamoDB backups plus S3 copies in a second Region.
+      relevance: The cheapest strategy, with the slowest recovery.
+    - term: Pilot light
+      simple: Keeping the most important parts (usually the data) always running in a second Region, and switching the rest on only in a disaster.
+      technical: A DR strategy that keeps core data replicated and minimal infrastructure provisioned in the recovery Region, with the remaining resources provisioned at failover.
+      example: A replicated database in Hyderabad with no application servers until they're needed.
+      relevance: Lower RTO than backup and restore, at a modest cost.
+    - term: Warm standby
+      simple: A smaller, always-running copy of the whole system in another Region, ready to grow and take over.
+      technical: A DR strategy that runs a scaled-down but fully functional copy of the workload in the recovery Region, scaled up at failover.
+      example: Two small app servers and a replica database running in a second Region all the time.
+      relevance: RTO in minutes, higher cost.
+    - term: Multi-site active/active
+      simple: Running the full system in two or more Regions at once, all serving users.
+      technical: A DR strategy in which the workload runs at full capacity in multiple Regions simultaneously, so the loss of one Region requires little or no recovery.
+      example: A global payments platform serving users from Mumbai and Singapore at the same time.
+      relevance: Near-zero RPO and RTO, at the highest cost and complexity.
+    - term: S3 Versioning
+      simple: A setting that makes S3 keep every old version of a file, so overwrites and deletions can be undone.
+      technical: A bucket-level feature that preserves every version of every object. Deleting an object adds a delete marker instead of removing the data.
+      example: Recovering yesterday's price list after someone overwrote it with a broken one.
+      relevance: The exam's answer to "protect against accidental deletion or overwrite".
+
+  interview:
+    beginner:
+      - question: What are RPO and RTO?
+        modelAnswer: >-
+          RPO, the recovery point objective, is how much data loss is acceptable, measured in time: how far back the last
+          good copy may be. RTO, the recovery time objective, is how long the system may be down before it's working again.
+          A one-hour RPO and four-hour RTO means losing at most an hour of data and being back within four hours.
+      - question: Name the four DR strategies AWS describes, from cheapest to most expensive.
+        modelAnswer: >-
+          Backup and restore, pilot light, warm standby, and multi-site active/active. Each step lowers RPO and RTO and
+          raises cost and complexity.
+    intermediate:
+      - question: Why isn't Multi-AZ enough for disaster recovery?
+        modelAnswer: >-
+          Multi-AZ protects against the failure of a data centre or AZ, but every AZ is in the same Region. A Region-wide
+          problem, or a logical disaster like accidental deletion, ransomware or a bad data migration, affects all AZs at
+          once, because replication copies the damage too. DR needs independent copies: backups with history, often in
+          another Region or account.
+      - question: Someone deletes an important file in a versioned S3 bucket. How do you recover it?
+        modelAnswer: >-
+          The delete only added a delete marker; earlier versions still exist. List the object's versions with
+          list-object-versions, then either delete the delete marker (making the previous version current again) or copy
+          the wanted version back as a new current version with copy-object and its versionId.
+    advanced:
+      - question: A company needs RPO of 15 minutes and RTO of 1 hour for its order system, on a limited budget. Which strategy and AWS features would you propose?
+        modelAnswer: >-
+          A pilot light, or a small warm standby, in a second Region. Use continuous replication for data (for example a
+          cross-Region read replica or Aurora Global Database for the relational data, DynamoDB global tables, and S3
+          Replication for files), which gives an RPO of minutes or less. Keep the application infrastructure defined as
+          code, with small pre-built images, so it can be deployed or scaled in the recovery Region well within an hour.
+          Use Route 53 health checks and failover routing, and keep backups with history (AWS Backup, point-in-time
+          recovery) to handle logical corruption that replication would copy. Test failover regularly.
+
+  check:
+    - question: >-
+        In the demonstration, after `s3 rm prices.txt`, `s3 ls` showed nothing. Where was the data, and how did you get
+        the right version back?
+      hints:
+        - Look at the output of list-object-versions in step 4.
+        - Which version had the size of the correct price list?
+      answer: >-
+        Versioning was on, so the delete only added a delete marker. Both older versions were still stored. You found the
+        22-byte original version and used copy-object with its versionId to make it the current version again.
+    - question: >-
+        A table is backed up every night at 02:00. A disaster hits at 17:00 and the restore takes 40 minutes. What was the
+        actual data loss, and the actual downtime?
+      hints:
+        - Data loss is measured from the last backup to the disaster.
+        - Downtime is how long until service is back.
+      answer: >-
+        About 15 hours of data lost (02:00 to 17:00), so the effective RPO was 15 hours, plus at least 40 minutes of
+        downtime (RTO), more if detection and the decision to restore took time. If the business needs better, it needs
+        more frequent backups or continuous backup (point-in-time recovery).
+    - question: Why did the course tell you not to use `--source-region` when copying between Regions on Floci?
+      hints:
+        - Look at the warning in step 9.
+        - Which endpoint did that request actually go to?
+      answer: >-
+        Because when it was tested with --source-region, the read request went to real AWS instead of Floci (real AWS
+        answered InvalidAccessKeyId, rejecting the dummy credentials). On Floci the copy works without it, and safety
+        comes first: every request must go to localhost:4566.
