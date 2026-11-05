@@ -1,0 +1,117 @@
+title: Containers
+summary: >-
+  What containers are, how they differ from virtual machines, why they changed how software is shipped, how AWS runs
+  them (ECR, ECS, EKS, Fargate), and real containers on your Mac plus an ECS task run by Floci.
+estimatedMinutes: 45
+prerequisites:
+  - virtualization
+topics:
+  - containers
+  - docker
+  - images
+  - ecs
+  - fargate
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-05"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.3 compute: containers, Amazon ECS, Amazon EKS, AWS Fargate, Amazon ECR)"
+
+sections:
+  terms:
+    - term: Container
+      simple: A sealed box holding an app and everything it needs to run, so it works the same on any computer.
+      technical: An isolated process (or group of processes) that shares the host's kernel but has its own filesystem, process tree, network and resource limits, created from an image.
+      example: A Python web app plus Python and its libraries, running in one container.
+      relevance: The standard way to package and run modern applications, including on AWS.
+    - term: Container image
+      simple: The recipe and ingredients for a container, frozen into a file you can copy anywhere.
+      technical: A read-only, layered filesystem snapshot plus metadata (entrypoint, environment), identified by a name, tag and content digest.
+      example: alpine:3.21 (about 13 MB), postgres:16-alpine.
+      relevance: You build an image once and run it as many containers as you need.
+    - term: Docker
+      simple: The most popular tool for building and running containers.
+      technical: A platform with a daemon (engine), CLI and image format for building, distributing and running OCI-compatible containers.
+      example: docker run --rm alpine:3.21 echo hello
+      relevance: Exams don't test Docker commands, but every container service on AWS runs Docker-compatible images.
+    - term: Container registry
+      simple: An online library where container images are stored and downloaded from.
+      technical: A service that stores and distributes container images by repository and tag, with access control.
+      example: Amazon ECR, Docker Hub, the ECR Public Gallery.
+      relevance: Amazon ECR is AWS's managed registry.
+    - term: Amazon ECS
+      simple: AWS's own service for running and managing lots of containers.
+      technical: Amazon Elastic Container Service, a fully managed container orchestrator that schedules tasks and services on EC2 instances or AWS Fargate.
+      example: A cluster running 6 copies of a web container behind a load balancer.
+      relevance: The simpler AWS-native choice for container orchestration.
+    - term: Amazon EKS
+      simple: AWS's managed Kubernetes, the popular open-source system for running containers.
+      technical: Amazon Elastic Kubernetes Service, a managed Kubernetes control plane, with worker nodes on EC2 or Fargate.
+      example: A company that already uses Kubernetes moving its clusters to AWS.
+      relevance: The exam answer when a scenario mentions Kubernetes.
+    - term: AWS Fargate
+      simple: Run containers without having to manage any servers for them.
+      technical: A serverless compute engine for ECS and EKS that runs each task or pod in its own isolated environment, billed per vCPU and memory per second.
+      example: Running an ECS task with launch type FARGATE, as in the demo.
+      relevance: This is the "serverless containers" answer, with no EC2 instances to patch or scale.
+    - term: Task definition
+      simple: A description of which containers to run together and how much CPU and memory they get.
+      technical: A versioned ECS resource (JSON) describing one or more container definitions, images, CPU and memory, networking mode, environment and logging.
+      example: ama-l1-hello revision 1, 256 CPU units and 512 MiB, running alpine:3.21.
+      relevance: The ECS equivalent of a launch template.
+
+  interview:
+    beginner:
+      - question: What's the difference between a container and a virtual machine?
+        modelAnswer: >-
+          A VM includes a whole guest operating system with its own kernel, running on a hypervisor. A container packages
+          only the application and its libraries and shares the host's kernel. Containers are smaller and start in about a
+          second; VMs are heavier but give stronger isolation.
+      - question: What problem do containers solve?
+        modelAnswer: >-
+          "It works on my machine." The image includes the app and all its dependencies, so it runs the same on a
+          laptop, a test server and production. It also makes deployment fast and repeatable.
+    intermediate:
+      - question: When would you choose Fargate over ECS on EC2?
+        modelAnswer: >-
+          When you don't want to manage, patch and scale the EC2 instances that run your containers, and pay per task
+          instead. ECS on EC2 suits cases needing GPUs or special instance types, very high steady utilisation where
+          reserved EC2 capacity is cheaper, or host-level control.
+      - question: ECS or EKS, how do you decide?
+        modelAnswer: >-
+          ECS is AWS-native and simpler, with fewer concepts and deep AWS integration. EKS runs standard Kubernetes, which
+          makes sense if the team already uses Kubernetes, needs its ecosystem, or wants portability across environments.
+          It has more operational complexity.
+    advanced:
+      - question: How are multi-tenant containers isolated on Fargate, given that containers share a kernel?
+        modelAnswer: >-
+          Fargate doesn't put different customers' containers on a shared kernel. Each task or pod runs in its own
+          isolated environment (a lightweight VM, using technology such as Firecracker micro-VMs), so the strong VM
+          isolation boundary separates tenants while containers keep their fast start-up and packaging benefits.
+
+  check:
+    - question: >-
+        In the demonstration, `uname -r` printed the same kernel version inside the Alpine container as in the Colima VM,
+        but `/etc/os-release` said Alpine, not Ubuntu. What does that tell you about containers?
+      hints:
+        - Which part of the operating system did the container bring with it?
+        - Which part did it borrow?
+      answer: >-
+        The container brought its own user-space files (the Alpine distribution's libraries and tools) but shares the
+        host's kernel, here the Colima VM's Linux kernel. That's the defining difference from a VM, which runs its own kernel.
+    - question: The container started in about 0.2 seconds. Why is that so much faster than booting a VM?
+      hints:
+        - What does a VM have to do when it starts?
+        - Does a container start a kernel?
+      answer: >-
+        A VM must boot a whole operating system, kernel included. A container is just an isolated process on a kernel
+        that's already running, so starting it is roughly as fast as starting a program.
+    - question: The ECS task ended with lastStatus STOPPED and exit code 0. Was that a failure?
+      hints:
+        - What was the container's command?
+        - What does exit code 0 mean?
+      answer: >-
+        No. The container ran `echo hello` and finished successfully (exit code 0), so ECS stopped the task with
+        EssentialContainerExited. A long-running web server would instead stay RUNNING, usually as part of an ECS service.
