@@ -1,0 +1,130 @@
+title: AWS account structure
+summary: >-
+  What an AWS account is (a boundary for security, billing and limits), the root user, why companies use many
+  accounts, and how AWS Organizations, organizational units, service control policies and consolidated billing tie
+  them together, built as a small organization on Floci.
+estimatedMinutes: 45
+prerequisites:
+  - well-architected-framework
+topics:
+  - aws-account
+  - root-user
+  - organizations
+  - organizational-units
+  - service-control-policies
+  - consolidated-billing
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (task 2.3 access management incl. root user) and Domain 4: Billing, Pricing, and Support (task 4.2 AWS Organizations, consolidated billing)"
+
+sections:
+  terms:
+    - term: AWS account
+      simple: Your own separate space in AWS, with its own resources, users and bill.
+      technical: >-
+        A container for AWS resources identified by a 12-digit account ID. It is a hard boundary for security
+        (identities and permissions), billing and service quotas. Resources in one account are isolated from others by default.
+      example: 000000000000 is Floci's account; a real one looks like 452733742654.
+      relevance: Every ARN contains the account ID; every design decides how many accounts to use.
+    - term: Root user
+      simple: The all-powerful login created with the account, using its email address.
+      technical: >-
+        The identity created when the account is opened, with complete unrestricted access to all resources and
+        billing. It can't be limited by IAM policies (only by SCPs in an organization's member accounts).
+      example: Signing in with the account's email address and password.
+      relevance: Must be protected with MFA and used only for root-only tasks. Heavily tested.
+    - term: AWS Organizations
+      simple: A way to manage many AWS accounts together, from one main account.
+      technical: >-
+        A service to centrally create, group and govern accounts, with a management account, organizational units,
+        policies (SCPs, tag policies, backup policies) and consolidated billing.
+      example: o-0364ja2cp1 contained the management account plus shop-prod and shop-dev.
+      relevance: The standard for any company with more than one account.
+    - term: Management account
+      simple: The main account that creates the organization and pays the bills.
+      technical: >-
+        The account that creates the organization, invites or creates member accounts, sets policies and is
+        responsible for paying all charges. SCPs never restrict the management account.
+      example: Account 000000000000 was the management account in the demo.
+      relevance: Keep workloads out of it; protect it strongly.
+    - term: Organizational unit (OU)
+      simple: A folder for grouping accounts that need the same rules.
+      technical: >-
+        A container for accounts (and other OUs) under the organization root. Policies attached to an OU apply to every
+        account inside it, including nested OUs.
+      example: ama-l1-workloads for production, ama-l1-sandbox for experiments.
+      relevance: How you apply guardrails to groups of accounts.
+    - term: Service control policy (SCP)
+      simple: A rule that sets the maximum anyone in an account can do, even administrators.
+      technical: >-
+        An organization policy that defines the maximum available permissions for IAM users and roles (including the
+        root user) in member accounts. It grants nothing by itself; IAM policies must still allow actions.
+      example: ama-l1-india-only denies actions outside ap-south-1 and ap-south-2.
+      relevance: The exam's answer to "prevent all accounts from doing X".
+    - term: Consolidated billing
+      simple: One bill for all the accounts in the organization.
+      technical: >-
+        The management account pays for all member accounts; usage is combined for volume pricing tiers, and Savings
+        Plans and Reserved Instances can be shared across accounts.
+      example: S3 storage from prod and dev added together reaches cheaper price tiers sooner.
+      relevance: A free feature of Organizations and a common CLF-C02 question.
+
+  interview:
+    beginner:
+      - question: What is the root user, and how should you use it?
+        modelAnswer: >-
+          The identity created with the account (its email address) with full, unrestricted access. Enable MFA, don't
+          create access keys for it, store its credentials safely, and use it only for the few tasks that require it,
+          such as changing account settings, closing the account or restoring IAM access. Daily work uses other identities.
+      - question: Why would a company use more than one AWS account?
+        modelAnswer: >-
+          Accounts are strong isolation boundaries. Separate accounts limit the blast radius of mistakes and breaches
+          (dev can't touch prod), separate billing per team or project, keep service quotas independent, and make
+          compliance easier because sensitive workloads sit in their own audited accounts.
+    intermediate:
+      - question: An SCP allows s3:* and an IAM policy allows only s3:GetObject. What can the user do?
+        modelAnswer: >-
+          Only s3:GetObject. Effective permissions are the intersection. The SCP sets the maximum and the IAM policy
+          grants. If the SCP denied s3:GetObject, the user couldn't do it even with an IAM allow.
+      - question: What's consolidated billing and what are its benefits?
+        modelAnswer: >-
+          The management account receives one bill for all member accounts. Benefits are a single payment, combined
+          usage for volume discounts, shared Reserved Instance and Savings Plans discounts, and per-account cost
+          visibility. It costs nothing extra.
+    advanced:
+      - question: Sketch a multi-account structure for a growing company.
+        modelAnswer: >-
+          A management account used only for Organizations and billing. A Security OU with a log-archive account
+          (central CloudTrail and Config logs) and a security-tooling account (GuardDuty and Security Hub administrator).
+          An Infrastructure OU for shared networking. A Workloads OU split into Prod and Non-prod, with an account per
+          application per environment. A Sandbox OU with spending limits. SCPs for Region restriction, protecting the
+          logs and preventing leaving the organization, and IAM Identity Center for access, typically set up with AWS
+          Control Tower.
+
+  check:
+    - question: >-
+        In step 7, the first delete-organization failed. What did AWS (and Floci) want you to do first, and what does
+        that protect against?
+      hints:
+        - Read the OrganizationNotEmptyException message.
+      answer: >-
+        Remove all member accounts first. Deleting an organization while it still contains accounts could leave them
+        without a payer and without guardrails, so the order is detach policies, empty OUs, remove accounts, then
+        delete the organization.
+    - question: The SCP ama-l1-india-only was attached to ama-l1-workloads. Does it affect ama-l1-shop-dev? Does it affect the management account?
+      hints:
+        - Which OU is shop-dev in?
+        - Do SCPs apply to the management account?
+      answer: >-
+        No to both. shop-dev is in ama-l1-sandbox, which doesn't have that SCP, and SCPs never apply to the management
+        account. Only shop-prod (in ama-l1-workloads) is restricted to the two Indian Regions.
+    - question: Why does the SCP exclude actions like iam:* and cloudfront:* with NotAction?
+      hints:
+        - Which Region do global services' requests use?
+      answer: >-
+        Global services (IAM, CloudFront, Route 53, Organizations…) are requested through us-east-1. Without the
+        exclusion, the Region condition would block them everywhere, breaking normal administration.
