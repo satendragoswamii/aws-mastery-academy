@@ -1,0 +1,117 @@
+title: The AWS CLI
+summary: >-
+  Using the AWS Command Line Interface well. Profiles and the config and credentials files, how settings are
+  resolved, output formats, JMESPath --query filters, --dry-run, JSON input skeletons, and the high-level s3 commands,
+  practised with an isolated lab profile against Floci.
+estimatedMinutes: 50
+prerequisites:
+  - aws-apis
+topics:
+  - aws-cli
+  - profiles
+  - configuration
+  - jmespath
+  - output-formats
+  - s3-sync
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.1 methods of deploying and operating: AWS CLI)"
+
+sections:
+  terms:
+    - term: AWS CLI
+      simple: A program you type commands into to control AWS from a terminal.
+      technical: >-
+        The AWS Command Line Interface (version 2), a unified tool generated from AWS service models that turns
+        commands into signed API requests, with configuration profiles, output formatting, querying, pagination and retries.
+      example: aws s3 sync site s3://ama-l1-cli-site uploads only changed files.
+      relevance: The standard tool for scripting and quick administration.
+    - term: Profile
+      simple: A saved set of settings (keys, Region, format) you can switch between by name.
+      technical: >-
+        A named section in ~/.aws/config and ~/.aws/credentials holding credentials or a credential source, Region,
+        output format and other settings, selected with --profile or the AWS_PROFILE variable.
+      example: The ama-floci profile with Region ap-south-1 and the dummy test keys.
+      relevance: Lets one person work with several accounts and roles safely.
+    - term: Config and credentials files
+      simple: Two small text files where the CLI keeps its settings and keys.
+      technical: >-
+        ~/.aws/config holds settings per profile (region, output, sso_*, role_arn, endpoint_url…), with sections named
+        [profile NAME]. ~/.aws/credentials holds access keys, with sections named [NAME]. AWS_CONFIG_FILE and
+        AWS_SHARED_CREDENTIALS_FILE can point elsewhere.
+      example: The lab writes ./aws-config and ./aws-credentials so your real ~/.aws stays untouched.
+      relevance: Knowing where settings come from solves most "wrong account/Region" problems.
+    - term: JMESPath (--query)
+      simple: A mini-language for picking out just the parts of the answer you want.
+      technical: >-
+        A JSON query language applied client-side by --query to the response, with projections ([]), filters
+        ([?cond]), functions (length, sort_by, starts_with) and multi-select ({A:a,B:b}).
+      example: "--query 'length(Regions[?starts_with(RegionName,`eu-`)])' counts European Regions."
+      relevance: Turns verbose JSON into exactly the value a script needs.
+    - term: Output formats
+      simple: Different ways the CLI can print the answer, for people or for scripts.
+      technical: >-
+        json (default), yaml, yaml-stream, text (tab-separated, good for shell scripts) and table (human-readable),
+        set with --output or the output setting.
+      example: get-caller-identity printed as JSON, text, YAML and a table.
+      relevance: text plus --query is the standard way to feed values into shell variables.
+    - term: Dry run
+      simple: Asking "would this work?" without actually doing it.
+      technical: >-
+        The --dry-run option (supported by EC2 and some other APIs) checks permissions and parameters and returns
+        DryRunOperation if the request would have succeeded, without creating anything.
+      example: run-instances --dry-run answered "Request would have succeeded, but DryRun flag is set."
+      relevance: A safe way to test permissions and scripts.
+
+  interview:
+    beginner:
+      - question: How do you tell the CLI which account and Region to use?
+        modelAnswer: >-
+          With a profile (--profile or AWS_PROFILE) that holds credentials (or an SSO/role source) and a default Region,
+          and override the Region per command with --region. aws sts get-caller-identity confirms which account and
+          identity you're actually using.
+      - question: What's the difference between aws s3 and aws s3api?
+        modelAnswer: >-
+          aws s3 is a set of high-level commands (cp, mv, sync, ls, rb) that handle multipart uploads, recursion and
+          comparisons for you. aws s3api maps one-to-one to the S3 API operations (PutObject, ListObjectsV2…), giving
+          full control over every parameter.
+    intermediate:
+      - question: In what order does the CLI pick up the Region?
+        modelAnswer: >-
+          The --region option first, then the AWS_REGION (or AWS_DEFAULT_REGION) environment variable, then the region
+          setting of the selected profile in the config file. The demo showed --region beating AWS_REGION, which beat the profile.
+      - question: How would you get just the instance IDs of running instances into a shell variable?
+        modelAnswer: >-
+          Use a filter plus a query with text output, e.g. IDS=$(aws ec2 describe-instances --filters
+          Name=instance-state-name,Values=running --query 'Reservations[].Instances[].InstanceId' --output text).
+          The server-side --filters reduces data returned; --query shapes it client-side.
+    advanced:
+      - question: How should engineers configure the CLI for many accounts without long-term keys?
+        modelAnswer: >-
+          Use IAM Identity Center profiles (sso_session, sso_account_id, sso_role_name) and aws sso login, or role
+          profiles with role_arn and source_profile/credential_source, so every command uses short-lived credentials.
+          Keep one profile per account/role with a clear name, and confirm with sts get-caller-identity in scripts.
+
+  check:
+    - question: >-
+        In step 5 the profile said ap-south-1, AWS_REGION said eu-west-1 and --region said us-east-1. Which won, and
+        what's the full order?
+      hints:
+        - Look at the last two outputs.
+      answer: >-
+        us-east-1 (--region) won. The order is command-line option, then environment variable, then config file profile.
+    - question: Why did the first Region filter with starts_with 'ap-south' also return ap-southeast Regions, and how was it fixed?
+      hints:
+        - Compare the strings ap-south and ap-southeast.
+      answer: >-
+        ap-southeast-1 starts with the text ap-south. Adding the hyphen (ap-south-) matches only ap-south-1 and ap-south-2.
+    - question: The second s3 sync uploaded only index.html. How did the CLI decide?
+      hints:
+        - What changed between the two syncs?
+      answer: >-
+        sync compares each local file with the object in S3 by size and last-modified time, and uploads only new or
+        changed files. Only index.html had been edited.
