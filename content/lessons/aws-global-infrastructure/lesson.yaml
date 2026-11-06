@@ -1,0 +1,131 @@
+title: AWS global infrastructure
+summary: >-
+  Regions, Availability Zones, edge locations, Local Zones, Wavelength and Outposts, and how to choose a Region by
+  compliance, latency, service availability and price, explored with Region and AZ queries and a CloudFront
+  distribution on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - cloud-pricing-models
+topics:
+  - regions
+  - availability-zones
+  - edge-locations
+  - cloudfront
+  - local-zones
+  - outposts
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.2 AWS global infrastructure: Regions, AZs, edge locations, Local Zones, Wavelength, Outposts)"
+
+sections:
+  terms:
+    - term: Region
+      simple: A geographic area where AWS has a cluster of data centres, such as Mumbai or Frankfurt.
+      technical: >-
+        A physical location in the world containing multiple, isolated Availability Zones. Regions are independent
+        of each other; most services and your data stay in the Region you choose.
+      example: ap-south-1 is Asia Pacific (Mumbai); ap-south-2 is Asia Pacific (Hyderabad).
+      relevance: Every resource you create (except global services) lives in one Region.
+    - term: Availability Zone (AZ)
+      simple: One or more separate data centres inside a Region, with their own power and network.
+      technical: >-
+        One or more discrete data centres with redundant power, networking and connectivity, physically separated
+        from other AZs in the Region (meaningful distance, but within about 100 km) and connected to them by
+        low-latency links.
+      example: ap-south-1a, ap-south-1b and ap-south-1c, with IDs aps1-az1, aps1-az2 and aps1-az3.
+      relevance: Spreading across AZs is how you get high availability.
+    - term: AZ ID
+      simple: The permanent ID of an AZ, which is the same for every account.
+      technical: >-
+        A zone ID such as aps1-az1 identifies the same physical AZ in every account, whereas zone names (ap-south-1a)
+        may map to different physical AZs in different accounts.
+      example: Two companies sharing resources compare aps1-az1, not ap-south-1a.
+      relevance: Matters when coordinating AZs across accounts.
+    - term: Edge location
+      simple: A small AWS site close to users that stores copies of content so it loads faster.
+      technical: >-
+        A point of presence used by CloudFront (caching), Route 53 (DNS), AWS Global Accelerator and AWS Shield.
+        There are far more edge locations than Regions, in many more cities.
+      example: A viewer in Chennai gets images from a nearby edge location instead of the origin bucket.
+      relevance: The exam's answer to "deliver content globally with low latency".
+    - term: Opt-in Region
+      simple: A newer Region you must switch on before you can use it.
+      technical: >-
+        Regions launched after March 2019 are disabled by default and must be enabled per account (opt-in) before
+        resources can be created in them.
+      example: ap-south-2 (Hyderabad) showed not-opted-in in the demo.
+      relevance: Explains "why can't I see this Region?" and helps restrict where data can go.
+    - term: Local Zone
+      simple: A small extension of a Region placed in a big city, for very low latency nearby.
+      technical: >-
+        An infrastructure deployment that places compute, storage and other select services close to large population
+        centres, attached to a parent Region.
+      example: Running game servers or media rendering near users in a specific city.
+      relevance: For single-digit-millisecond latency to end users in a metro area.
+    - term: Wavelength Zone
+      simple: AWS computers inside a mobile phone company's 5G network.
+      technical: Infrastructure embedded in telecom providers' 5G networks so mobile apps reach compute without leaving the carrier network.
+      example: Real-time AR or connected-vehicle apps.
+      relevance: The exam's answer for ultra-low-latency 5G mobile applications.
+    - term: AWS Outposts
+      simple: AWS hardware installed in your own data centre.
+      technical: >-
+        Racks or servers of AWS-managed infrastructure installed on premises, running AWS services and APIs locally
+        and connected to a parent Region.
+      example: A factory that must process data on site but wants to use the same AWS tools.
+      relevance: The exam's hybrid answer when data or processing must stay on premises.
+
+  interview:
+    beginner:
+      - question: What's the difference between a Region and an Availability Zone?
+        modelAnswer: >-
+          A Region is a geographic area (like Mumbai) containing several Availability Zones. An AZ is one or more
+          isolated data centres inside that Region with independent power and networking. You deploy across AZs for high
+          availability and across Regions for disaster recovery or to serve users in other parts of the world.
+      - question: What are edge locations used for?
+        modelAnswer: >-
+          They're points of presence close to users, used by CloudFront to cache content, Route 53 to answer DNS,
+          Global Accelerator to bring traffic onto the AWS network early, and Shield for DDoS protection.
+    intermediate:
+      - question: How do you choose a Region for a new application?
+        modelAnswer: >-
+          Four factors. Compliance and data residency (laws may require data to stay in a country), latency to users,
+          service and feature availability (not every service is in every Region), and price (prices differ by Region).
+          Compliance comes first, because it's not negotiable.
+      - question: Why might ap-south-1a in your account be a different data centre from ap-south-1a in mine?
+        modelAnswer: >-
+          AWS has historically mapped AZ names to physical AZs differently per account, to spread load evenly. Zone IDs
+          (aps1-az1 and so on) are consistent across accounts, so use those when coordinating between accounts.
+    advanced:
+      - question: When would you choose Local Zones, Wavelength or Outposts instead of a normal Region?
+        modelAnswer: >-
+          Local Zones when users in a specific metro area need single-digit-millisecond latency (gaming, live media).
+          Wavelength for 5G mobile apps that must stay inside the carrier network. Outposts when data or processing must
+          physically stay on premises (data residency, low latency to factory equipment) but you want AWS APIs and
+          tooling. Each extends a parent Region and offers a subset of services.
+
+  check:
+    - question: >-
+        The demo showed 17 Regions by default but 34 with --all-regions. What's the difference between the two lists?
+      hints:
+        - Look at the OptIn column in step 1.
+      answer: >-
+        The default list shows Regions that are usable in the account. --all-regions also includes opt-in Regions that
+        are not enabled (not-opted-in), such as ap-south-2 and me-central-1, which must be switched on first.
+    - question: The bucket was created in ap-south-1. Where does its data live, and what would serve it to a user in London fast?
+      hints:
+        - Look at get-bucket-location.
+        - What did step 4 create?
+      answer: >-
+        The data stays in ap-south-1 (Mumbai) unless you copy it elsewhere. A CloudFront distribution with the bucket as
+        its origin would serve cached copies from an edge location near London.
+    - question: Why did the first delete-distribution in step 5 fail?
+      hints:
+        - Read the error code.
+      answer: >-
+        DistributionNotDisabled. A CloudFront distribution must be disabled (update with Enabled=false) before it can be
+        deleted; in real AWS you also wait until the change is deployed.
