@@ -1,0 +1,116 @@
+title: Regions and Availability Zones
+summary: >-
+  Working with Regions and AZs in practice. Which resources are scoped to an AZ, a Region or the whole account, how
+  to spread servers across AZs, why an EBS volume can't follow an instance to another AZ, and what crossing AZs costs,
+  demonstrated with instances and volumes on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - aws-global-infrastructure
+topics:
+  - regions
+  - availability-zones
+  - resource-scope
+  - ebs
+  - multi-az
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.2 Regions, AZs, high availability across AZs)"
+
+sections:
+  terms:
+    - term: Resource scope
+      simple: How far a resource reaches. It can live in one AZ, a whole Region, or everywhere.
+      technical: >-
+        Every AWS resource is AZ-scoped (EC2 instance, EBS volume, subnet), Region-scoped (VPC, S3 bucket, DynamoDB
+        table, Lambda function, SQS queue) or global (IAM users and roles, Route 53 zones, CloudFront distributions).
+      example: A subnet lives in ap-south-1a; the VPC it belongs to spans all of ap-south-1.
+      relevance: Decides what fails together and what you must copy to survive an outage.
+    - term: Multi-AZ deployment
+      simple: Running copies of your application in two or more AZs so one AZ failing doesn't stop you.
+      technical: >-
+        Distributing redundant resources (instances, database replicas, NAT gateways) across at least two AZs behind
+        services that route around failures, such as Elastic Load Balancing and Auto Scaling.
+      example: ama-l1-web-a in ap-south-1a and ama-l1-web-b in ap-south-1b.
+      relevance: The default for anything in production.
+    - term: Default subnet
+      simple: A ready-made subnet AWS creates in each AZ of the default VPC.
+      technical: >-
+        Each AZ in a Region has one default subnet in the default VPC (172.31.0.0/16), sized /20. Launching into a
+        subnet is how you choose an instance's AZ.
+      example: subnet-default-ap-south-1-b is in ap-south-1b.
+      relevance: Picking a subnet picks the AZ.
+    - term: Amazon EBS volume
+      simple: A network hard disk for an EC2 instance, which lives in one AZ.
+      technical: >-
+        Block storage replicated within a single AZ. It can only be attached to instances in the same AZ; to move it,
+        snapshot it (snapshots are stored regionally) and create a new volume from the snapshot in another AZ.
+      example: vol-… in ap-south-1b could not be attached to an instance in ap-south-1a.
+      relevance: A classic exam and interview question about AZ scope.
+    - term: Cross-AZ data transfer
+      simple: Sending data between AZs costs a little money; inside one AZ it's usually free.
+      technical: >-
+        Data transferred between AZs in the same Region is typically charged per GB in each direction, while
+        transfer within an AZ using private IPs is free. Some managed services (e.g. RDS Multi-AZ replication) don't charge for it.
+      example: Chatty microservices spread over three AZs can build up a noticeable transfer bill.
+      relevance: A hidden cost of multi-AZ designs.
+    - term: Fault isolation boundary
+      simple: A wall that stops a problem in one place from spreading.
+      technical: >-
+        AZs and Regions are AWS's fault isolation boundaries. Designing with them means a failure in one boundary
+        affects only the resources inside it.
+      example: An AZ power event stops ama-l1-web-a but not ama-l1-web-b.
+      relevance: The foundation of the Reliability pillar.
+
+  interview:
+    beginner:
+      - question: Name one AZ-scoped, one Regional and one global AWS resource.
+        modelAnswer: >-
+          AZ-scoped, an EC2 instance, EBS volume or subnet. Regional, an S3 bucket, VPC, DynamoDB table or Lambda
+          function. Global, IAM users and roles, Route 53 hosted zones, or CloudFront distributions.
+      - question: How do you choose which AZ an EC2 instance runs in?
+        modelAnswer: >-
+          By choosing its subnet, because every subnet belongs to exactly one AZ (or via a placement AZ for the default
+          VPC). Auto Scaling groups choose for you across the subnets you list.
+    intermediate:
+      - question: An instance in ap-south-1a fails. Its data is on an EBS volume. How do you get the data to a new instance in ap-south-1b?
+        modelAnswer: >-
+          Create a snapshot of the volume (stored regionally in S3 behind the scenes), then create a new volume from that
+          snapshot in ap-south-1b and attach it to the new instance. An EBS volume can't be attached across AZs directly.
+          For shared files across AZs, use EFS instead.
+      - question: Is S3 an AZ resource? What happens to your objects if one AZ fails?
+        modelAnswer: >-
+          S3 buckets are Regional. S3 Standard stores objects redundantly across at least three AZs, so an AZ failure
+          doesn't lose data or availability. One Zone storage classes keep data in a single AZ and are cheaper but less resilient.
+    advanced:
+      - question: Why is "number of AZs" a trade-off and not simply "use as many as possible"?
+        modelAnswer: >-
+          More AZs give more resilience and let you lose one AZ with less spare capacity (with N AZs you need about
+          N/(N-1) of normal capacity). But each extra AZ adds per-AZ resources (NAT gateways, standby instances), more
+          cross-AZ data transfer cost and more latency between components. Most production designs use two or three
+          AZs; three lets you lose one AZ and still have redundancy.
+
+  check:
+    - question: Why did attach-volume fail in step 3, and what's the real-world way to move that data?
+      hints:
+        - Compare the volume's AZ with ama-l1-web-a's AZ.
+      answer: >-
+        The volume was in ap-south-1b and ama-l1-web-a was in ap-south-1a; EBS volumes only attach within their own AZ.
+        In real AWS, snapshot the volume and create a new volume from the snapshot in the other AZ.
+    - question: In step 5, why did the ap-south-2 query print nothing and the us-east-1 query fail, although the instances and volume existed?
+      hints:
+        - What does --region change?
+      answer: >-
+        EC2 instances and EBS volumes are Regional resources inside ap-south-1. Asking another Region's endpoint looks in
+        a different, independent Region, where they don't exist.
+    - question: >-
+        You have two web servers, one in ap-south-1a and one in ap-south-1b. Each normally runs at 70% CPU. Can you
+        survive losing one AZ?
+      hints:
+        - What happens to the load when one server disappears?
+      answer: >-
+        Not comfortably. The surviving server would need about 140% of its capacity. You'd need more capacity per AZ
+        (e.g. run at under 50%), a third AZ, or Auto Scaling to add capacity quickly.
