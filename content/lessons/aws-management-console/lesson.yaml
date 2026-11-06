@@ -1,0 +1,117 @@
+title: The AWS Management Console
+summary: >-
+  The web console. How you sign in, where the Region selector, service search, account menu and CloudShell live, what
+  the console is good and bad at, and proof that the console and the CLI call the same APIs, using the Floci UI as a
+  stand-in console.
+estimatedMinutes: 35
+prerequisites:
+  - aws-account-structure
+topics:
+  - console
+  - sign-in
+  - region-selector
+  - cloudshell
+  - console-vs-cli
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.1 methods of deploying and operating in the AWS Cloud: console, CLI, SDKs, IaC)"
+
+sections:
+  terms:
+    - term: AWS Management Console
+      simple: The website where you click your way around AWS.
+      technical: >-
+        A browser-based interface to AWS services that, behind every page and button, calls the same public AWS APIs
+        as the CLI and SDKs, using your signed-in identity's permissions.
+      example: Creating a bucket by typing its name and clicking Create bucket.
+      relevance: The first place most people meet AWS, and one of the deployment methods on CLF-C02.
+    - term: Sign-in URL
+      simple: The web address where people in your account log in.
+      technical: >-
+        Root users sign in with the account email. IAM users use an account-specific URL containing the account ID or
+        alias. IAM Identity Center users use their organisation's access portal URL.
+      example: https://123456789012.signin.aws.amazon.com/console or https://my-shop.signin.aws.amazon.com/console with an alias.
+      relevance: Different identities sign in differently, which confuses beginners.
+    - term: Region selector
+      simple: The drop-down at the top that decides which Region's resources you're looking at.
+      technical: >-
+        A console control that sets the Regional endpoint used for Regional services. Global services (IAM, Route 53,
+        CloudFront) show Global instead.
+      example: Switching from Mumbai to N. Virginia makes your Mumbai instances "disappear".
+      relevance: The number one cause of "my resources are gone".
+    - term: AWS CloudShell
+      simple: A command line inside the console, already logged in as you.
+      technical: >-
+        A browser-based shell environment, launched from the console, with the AWS CLI and common tools
+        pre-installed and credentials from your console session, plus a small amount of persistent home storage per Region.
+      example: Running aws s3 ls without installing or configuring anything.
+      relevance: The quickest way to use the CLI safely without local keys.
+    - term: Console vs. programmatic access
+      simple: Clicking in a website vs. sending commands from code or a terminal.
+      technical: >-
+        Console access uses a password (plus MFA) and a browser session; programmatic access uses temporary or long-term
+        credentials to sign API requests (CLI, SDKs, IaC tools). Both reach the same APIs.
+      example: The bucket made in the console was immediately listed by the CLI.
+      relevance: Knowing which to use, and that they're equivalent, is basic AWS literacy.
+    - term: Resource Groups and Tag Editor
+      simple: Console tools for finding and organising resources by their labels.
+      technical: >-
+        Resource Groups collects resources matching tag or CloudFormation-stack queries; Tag Editor searches and edits
+        tags across services and Regions in bulk.
+      example: Finding every resource tagged Project=shop across all Regions.
+      relevance: Helps answer "what do we have, and who owns it?"
+
+  interview:
+    beginner:
+      - question: When would you use the console instead of the CLI?
+        modelAnswer: >-
+          For exploring a new service, one-off tasks, viewing dashboards and graphs, and learning what options exist.
+          For anything repeatable (creating environments, deployments, bulk changes) the CLI, SDKs or infrastructure as
+          code are better because they're repeatable, reviewable and automatable.
+      - question: You created an EC2 instance yesterday and today the console shows none. What do you check first?
+        modelAnswer: >-
+          The Region selector. EC2 is Regional, so the console only shows instances in the selected Region. Then check
+          you're signed in to the right account and that filters aren't hiding it.
+    intermediate:
+      - question: Is something you do in the console different from the same thing done with the CLI?
+        modelAnswer: >-
+          No, at the API level. The console calls the same AWS APIs with your identity's permissions, so the result,
+          the IAM checks and the CloudTrail record are the same. The difference is repeatability. Console actions are
+          manual and easy to get slightly different each time.
+      - question: Why is CloudShell often safer than configuring the CLI on your laptop?
+        modelAnswer: >-
+          CloudShell uses the temporary credentials of your console session, so you never create or store long-term
+          access keys on a laptop that could be lost or leak them. It also has the CLI pre-installed and up to date.
+    advanced:
+      - question: How do organisations stop people from making untracked changes in the console ("ClickOps") in production?
+        modelAnswer: >-
+          Give people read-only console access to production through IAM Identity Center permission sets, and make
+          changes only through infrastructure-as-code pipelines. Use break-glass roles for emergencies, detect drift with
+          AWS Config and CloudFormation drift detection, and alert on console write events via CloudTrail and EventBridge.
+
+  check:
+    - question: >-
+        You created ama-l1-console-made in the console and the CLI listed it a moment later. What does this tell you about
+        how the console works?
+      hints:
+        - What does the console send when you click Create bucket?
+      answer: >-
+        The console is just a client of the AWS API, like the CLI. Clicking Create bucket sends a CreateBucket API
+        request, so the result is immediately visible to any other client.
+    - question: The CLI uploaded hello.txt, and the console showed it with its size. Which direction did that prove?
+      hints:
+        - Who wrote the object, and who read it?
+      answer: >-
+        CLI to console. A change made through the API (CLI) is visible in the console, because both read the same S3
+        service.
+    - question: Name two tasks you'd rather do in the console, and two you'd rather do with the CLI or code.
+      hints:
+        - Think about graphs and exploring vs. repeating and automating.
+      answer: >-
+        Console, for example exploring a new service's options and viewing CloudWatch dashboards or the Cost Explorer
+        graphs. CLI/code, for example creating the same environment in several Regions and bulk-tagging hundreds of
+        resources (or anything that must be repeatable and reviewed).
