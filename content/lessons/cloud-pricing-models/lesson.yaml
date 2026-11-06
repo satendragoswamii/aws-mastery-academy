@@ -1,0 +1,131 @@
+title: Cloud pricing models
+summary: >-
+  Pay-as-you-go, On-Demand, Reserved Instances, Savings Plans, Spot and dedicated options, what you're really billed
+  for (compute, storage, requests, data transfer), and how budgets stop surprise bills, with real price lookups on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - cloud-security-basics
+topics:
+  - pricing
+  - on-demand
+  - reserved-instances
+  - savings-plans
+  - spot
+  - budgets
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 4: Billing, Pricing, and Support (task 4.1 pricing models, task 4.2 billing, budget and cost management resources)"
+
+sections:
+  terms:
+    - term: Pay-as-you-go
+      simple: You pay only for what you use, like an electricity meter, with no big upfront purchase.
+      technical: >-
+        Consumption-based billing per second, hour, GB-month or request, with no upfront commitment, turning capital
+        expenditure (CapEx) into operational expenditure (OpEx).
+      example: A t3.micro running 10 hours costs about 10 x $0.0104 in us-east-1.
+      relevance: The core economic benefit of cloud and a CLF-C02 favourite.
+    - term: On-Demand
+      simple: The normal price. Start and stop any time, with no promise to keep using it.
+      technical: Per-second (Linux, 60-second minimum) or per-hour billing for compute with no commitment, at the highest unit price.
+      example: $0.0104 per hour for t3.micro Linux in us-east-1.
+      relevance: Best for short, unpredictable or new workloads.
+    - term: Reserved Instances (RIs)
+      simple: A discount in exchange for promising to use a type of server for 1 or 3 years.
+      technical: >-
+        A billing discount (up to about 72%) for committing to a specific instance family, Region, tenancy and OS for a
+        1- or 3-year term, paid all upfront, partial upfront or no upfront. Standard RIs give more discount; Convertible
+        RIs can be exchanged.
+      example: A database server that runs 24/7 for years.
+      relevance: Classic exam answer for steady, predictable workloads.
+    - term: Savings Plans
+      simple: A discount for promising to spend a fixed amount per hour on compute, for 1 or 3 years.
+      technical: >-
+        A commitment to a consistent amount of usage (USD per hour) for 1 or 3 years. Compute Savings Plans apply across
+        EC2 instance families, Regions, Fargate and Lambda; EC2 Instance Savings Plans give a larger discount for one family in one Region.
+      example: Committing to $2/hour of compute and getting discounted rates on whatever you run up to that.
+      relevance: The flexible modern alternative to RIs.
+    - term: Spot Instances
+      simple: Spare AWS capacity at a big discount, but AWS can take it back with 2 minutes' warning.
+      technical: >-
+        Unused EC2 capacity at up to 90% off On-Demand, with prices that vary by AZ. Instances can be interrupted with a
+        two-minute notice when AWS needs the capacity back.
+      example: Floci showed t3.micro Spot at about $0.0044 to $0.0047 per hour across three AZs.
+      relevance: The answer for fault-tolerant, flexible jobs (batch, CI, rendering), never for a single critical database.
+    - term: Dedicated Hosts
+      simple: A whole physical server reserved only for you.
+      technical: >-
+        A physical server fully dedicated to your account, giving visibility of sockets and cores. Used for
+        server-bound software licences and some compliance needs. Dedicated Instances are similar but without host-level control.
+      example: Bringing your own Windows Server or Oracle licences that are licensed per physical core.
+      relevance: The exam's answer to "bring your own per-socket licences".
+    - term: Data transfer charges
+      simple: Moving data into AWS is free; moving it out to the internet usually costs money.
+      technical: >-
+        Inbound transfer from the internet is free. Outbound to the internet is charged per GB after a monthly free
+        allowance (100 GB, aggregated across services). Traffic between AZs and between Regions is also charged.
+      example: A video site's biggest bill line is often outbound data transfer, which is why CloudFront is used.
+      relevance: The hidden cost that surprises beginners.
+    - term: AWS Budgets
+      simple: A spending limit that emails you before you overspend.
+      technical: >-
+        Lets you set cost, usage, RI or Savings Plans budgets with alert thresholds (actual or forecasted), notifying by
+        email or SNS, and optionally running actions such as applying a restrictive policy.
+      example: Alert at 80% of a $10 monthly budget.
+      relevance: The first thing to set up in any new account.
+
+  interview:
+    beginner:
+      - question: Why can the cloud be cheaper than buying servers?
+        modelAnswer: >-
+          You pay only for what you use instead of buying for peak capacity, you avoid upfront hardware cost (CapEx to
+          OpEx), you benefit from AWS's economies of scale, and you can switch resources off when not needed.
+      - question: When would you choose Spot Instances?
+        modelAnswer: >-
+          For workloads that can tolerate interruption and are flexible about timing, such as batch processing, CI
+          builds, rendering or big-data jobs, where saving up to 90% is worth handling the two-minute interruption notice.
+    intermediate:
+      - question: Reserved Instances or Savings Plans? How do you decide?
+        modelAnswer: >-
+          Both give up to about 72% off for a 1- or 3-year commitment. Savings Plans commit to a dollar amount per hour
+          and (Compute Savings Plans) apply across instance families, Regions, Fargate and Lambda, so they suit changing
+          architectures. RIs commit to specific instance attributes; they're still used for services like RDS,
+          ElastiCache and OpenSearch, where Savings Plans don't apply in the same way.
+      - question: A company's bill doubled although traffic only grew 10%. Where do you look first?
+        modelAnswer: >-
+          Cost Explorer grouped by service and usage type, to find the line that grew. Common causes are data transfer
+          (outbound, cross-AZ or NAT gateway processing), forgotten resources (idle instances, unattached EBS volumes, old
+          snapshots), logging volume, or a change from Reserved/Savings Plan coverage to On-Demand.
+    advanced:
+      - question: How would you design the purchasing mix for a web app with a steady base load and daily peaks?
+        modelAnswer: >-
+          Cover the steady 24/7 baseline with a Savings Plan (or RIs), serve daily peaks with On-Demand capacity from an
+          Auto Scaling group, and add Spot to the Auto Scaling group (mixed instances policy, several instance types and
+          AZs) for interruption-tolerant extra capacity. Then review coverage and utilisation monthly in Cost Explorer.
+
+  check:
+    - question: >-
+        Using the On-Demand price you looked up in step 1, roughly how much does one t3.micro cost if it runs for a
+        whole 30-day month?
+      hints:
+        - 30 days x 24 hours.
+        - Multiply by the hourly price.
+      answer: 720 hours x $0.0104 per hour = about $7.49 a month (before storage and data transfer).
+    - question: >-
+        The Spot table in step 2 showed a different price in each Availability Zone. Why might that be, and what's
+        the catch with Spot?
+      hints:
+        - Spot price depends on spare capacity.
+      answer: >-
+        Spot prices follow long-term supply and demand for spare capacity in each AZ, so they differ by AZ. The catch is
+        that AWS can interrupt Spot Instances with a two-minute warning when it needs the capacity back.
+    - question: Your budget alerts at 80% of $10. Does a budget stop AWS from charging you beyond $10?
+      hints:
+        - Read the notification you configured.
+      answer: >-
+        No. A budget alerts you (and can trigger actions you configure); it doesn't cap spending by itself. You must act
+        on the alert or set up budget actions.
