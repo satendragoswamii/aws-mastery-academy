@@ -1,0 +1,132 @@
+title: Cloud security basics
+summary: >-
+  The CIA triad, defence in depth, least privilege, encryption at rest and in transit, keys (KMS), secrets
+  (Secrets Manager) and blocking public data, built as a locked-down shop records store on Floci.
+estimatedMinutes: 50
+prerequisites:
+  - cloud-networking-basics
+topics:
+  - security
+  - least-privilege
+  - encryption
+  - kms
+  - secrets-manager
+  - s3-block-public-access
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (tasks 2.1 shared responsibility, 2.2 security concepts incl. encryption, 2.3 access management, 2.4 security resources)"
+
+sections:
+  terms:
+    - term: CIA triad
+      simple: The three things security protects. Keep data secret, keep it correct, and keep it available.
+      technical: >-
+        Confidentiality (only authorised parties can read data), Integrity (data isn't altered without detection) and
+        Availability (systems and data are usable when needed). Every security control protects one or more of these.
+      example: Encryption protects confidentiality; checksums and versioning protect integrity; backups and multi-AZ protect availability.
+      relevance: A simple way to reason about any security question, including exam scenarios.
+    - term: Least privilege
+      simple: Give each person or program only the access it needs, and nothing more.
+      technical: >-
+        Granting the minimum set of permissions (actions on specific resources) required for a task, and removing them
+        when no longer needed. In AWS this is expressed in IAM policies.
+      example: An auditor gets s3:GetObject on one bucket's orders/ prefix, not s3:* on every bucket.
+      relevance: The most important IAM principle and a constant exam theme.
+    - term: Defence in depth
+      simple: Several layers of protection, so one mistake doesn't expose everything.
+      technical: >-
+        Layering independent controls (identity, network, encryption, monitoring) so the failure or bypass of one control
+        doesn't compromise the system.
+      example: A database in a private subnet, behind a security group, encrypted with KMS, with access logged in CloudTrail.
+      relevance: The idea behind the Well-Architected security pillar.
+    - term: Encryption at rest
+      simple: Scrambling stored data so a stolen disk or file is useless without the key.
+      technical: >-
+        Encrypting data on storage media (EBS volumes, S3 objects, RDS databases) with a key, typically AES-256 managed
+        through AWS KMS.
+      example: An S3 object stored with SSE-KMS using the key alias/ama-l1-shop-key.
+      relevance: Many AWS services offer it with one setting; regulations often require it.
+    - term: Encryption in transit
+      simple: Scrambling data while it travels across a network so nobody in between can read it.
+      technical: Protecting data moving between systems with TLS (HTTPS). AWS API endpoints use TLS.
+      example: Customers reach the shop over https on port 443, never plain http.
+      relevance: Together with encryption at rest, it covers data in both states.
+    - term: AWS KMS
+      simple: The AWS service that creates and guards encryption keys for you.
+      technical: >-
+        AWS Key Management Service creates and controls keys whose key material never leaves KMS unencrypted. Services
+        call KMS to encrypt and decrypt, and every use can be controlled by key policies and logged in CloudTrail.
+      example: kms encrypt turned "card ending 4242" into 125 bytes of ciphertext.
+      relevance: Behind almost every "encrypted with a customer managed key" answer.
+    - term: AWS Secrets Manager
+      simple: A safe for passwords and API keys, so they're not written in your code.
+      technical: >-
+        A service that stores secrets encrypted with KMS, controls access with IAM, can rotate them automatically, and
+        lets applications fetch them at runtime with an API call.
+      example: The shop's database password stored as ama-l1/shop-db.
+      relevance: The exam's answer to "store database credentials securely and rotate them".
+    - term: S3 Block Public Access
+      simple: A master switch that stops a bucket from being made public by accident.
+      technical: >-
+        Four settings at bucket or account level (BlockPublicAcls, IgnorePublicAcls, BlockPublicPolicy,
+        RestrictPublicBuckets) that override any ACL or bucket policy granting public access. On by default for new buckets.
+      example: With BlockPublicPolicy on, put-bucket-policy with Principal * fails with AccessDenied.
+      relevance: The standard control against the most common cloud data leak.
+
+  interview:
+    beginner:
+      - question: What does least privilege mean?
+        modelAnswer: >-
+          Giving each user, role or application only the permissions needed for its task, on only the resources it needs,
+          for only as long as needed. If those credentials leak, the damage is limited to that small set of permissions.
+      - question: What's the difference between encryption at rest and in transit?
+        modelAnswer: >-
+          At rest protects stored data (disks, S3 objects, databases), usually with KMS-managed keys. In transit protects
+          data moving across a network, using TLS/HTTPS. A secure system needs both.
+    intermediate:
+      - question: Why use Secrets Manager instead of putting a database password in an environment file or code?
+        modelAnswer: >-
+          Passwords in code or config files end up in Git history, images and logs, and are hard to change. Secrets
+          Manager stores them encrypted with KMS, controls who can read them with IAM, logs every access in CloudTrail and
+          can rotate them automatically, and the application fetches the current value at runtime.
+      - question: An IAM policy allows s3:GetObject on bucket/orders/*. Can the user read bucket/invoices/1.txt?
+        modelAnswer: >-
+          No. The policy doesn't match that resource, so the request is implicitly denied. IAM denies everything by
+          default; only explicit allows grant access, and any explicit deny overrides an allow.
+    advanced:
+      - question: How does KMS let you encrypt large files when Encrypt only accepts up to 4 KB?
+        modelAnswer: >-
+          Envelope encryption. You ask KMS for a data key (GenerateDataKey), which returns the data key in plaintext and
+          encrypted under the KMS key. You encrypt the data locally with the plaintext data key, discard it, and store the
+          encrypted data key next to the data. To decrypt, KMS decrypts the data key. Services like S3 and EBS do this
+          for you; S3 Bucket Keys reduce KMS calls further.
+
+  check:
+    - question: >-
+        In step 2, grep found 0 matches for "card ending" in card.enc, but decrypt gave the text back. What did KMS
+        need in order to decrypt, and why can't someone who only steals card.enc read it?
+      hints:
+        - Look at what you passed to decrypt. Did you name the key?
+        - Where does the key material live?
+      answer: >-
+        The ciphertext carries a reference to the KMS key, and KMS decrypted it because the caller was allowed to use that
+        key. The key material never leaves KMS, so a thief with only card.enc (and no permission on the key) can't decrypt it.
+    - question: >-
+        The simulator said s3:GetObject was allowed for orders/1001.txt but implicitDeny for invoices/1001.txt.
+        Which line of the policy made the difference?
+      hints:
+        - Look at the Resource list in read-orders.json.
+      answer: >-
+        The resource arn:aws:s3:::ama-l1-shop-records/orders/* only matches keys under orders/. Nothing allows invoices/,
+        and IAM denies anything not explicitly allowed.
+    - question: Why did put-bucket-policy fail in step 4, and was that a good thing?
+      hints:
+        - Look at the Principal in the policy.
+        - Which setting did you turn on in step 3?
+      answer: >-
+        The policy granted s3:GetObject to Principal "*" (everyone), which is a public policy. BlockPublicPolicy rejects
+        public policies, so it failed with AccessDenied. That's the guard rail working as intended.
