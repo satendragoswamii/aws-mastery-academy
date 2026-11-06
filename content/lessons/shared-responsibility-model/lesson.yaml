@@ -1,0 +1,124 @@
+title: The shared responsibility model
+summary: >-
+  What AWS secures (security of the cloud) and what you secure (security in the cloud), how the split shifts between
+  EC2, RDS, Lambda and S3, and the customer-side settings you must switch on yourself, practised as a small account
+  security baseline on Floci.
+estimatedMinutes: 40
+prerequisites:
+  - regions-and-availability-zones
+topics:
+  - shared-responsibility
+  - security-of-the-cloud
+  - security-in-the-cloud
+  - compliance
+  - account-baseline
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (task 2.1 understand the AWS shared responsibility model)"
+
+sections:
+  terms:
+    - term: Shared responsibility model
+      simple: AWS looks after the building and the machines; you look after what you put on them and who can use it.
+      technical: >-
+        The division of security and compliance duties between AWS (security OF the cloud, meaning the infrastructure
+        that runs all services) and the customer (security IN the cloud, meaning data, identities, configuration and
+        anything the customer installs or controls).
+      example: AWS patches the hypervisor; you patch the operating system on your EC2 instance.
+      relevance: One of the most tested ideas on CLF-C02.
+    - term: Security of the cloud
+      simple: AWS's half. The data centres, hardware, network and the software that runs AWS services.
+      technical: >-
+        Physical security of facilities, hardware, global network infrastructure, virtualisation layer, and the
+        operation of managed services' underlying platforms.
+      example: Guards, cameras and disk destruction in AWS data centres.
+      relevance: You can't change or audit it directly; you rely on AWS's compliance reports.
+    - term: Security in the cloud
+      simple: Your half. Your data, your users, your settings and anything you install.
+      technical: >-
+        Customer data, IAM, encryption choices, network and firewall configuration, guest operating systems and
+        applications, and client- and server-side data protection.
+      example: Turning on EBS encryption by default and a strong password policy.
+      relevance: Almost every cloud breach happens on this side.
+    - term: Inherited controls
+      simple: Protections you get for free because AWS already does them.
+      technical: >-
+        Controls fully provided by AWS that customers inherit, such as physical and environmental controls of data
+        centres.
+      example: You don't need to prove fire suppression at the data centre for your audit; AWS's reports cover it.
+      relevance: Reduces what you have to build and audit yourself.
+    - term: Shared controls
+      simple: Jobs where AWS does its part and you do yours, at different layers.
+      technical: >-
+        Controls that apply to both layers in different contexts. Patch management (AWS patches infrastructure, you
+        patch your guest OS and apps), configuration management, and awareness and training.
+      example: AWS trains its staff; you train yours.
+      relevance: Common exam question wording.
+    - term: Customer-specific controls
+      simple: Jobs only you can do.
+      technical: Controls solely the customer's responsibility, based on how they use AWS services, such as zone security or data classification.
+      example: Deciding which data is personal and must be encrypted and kept in India.
+      relevance: Contrasts with inherited and shared controls.
+    - term: AWS Artifact
+      simple: The place to download AWS's own audit reports and certificates.
+      technical: >-
+        A self-service portal for AWS compliance reports (SOC, ISO, PCI) and agreements (such as a Business Associate
+        Addendum), used as evidence for the AWS side of your audits.
+      example: Giving your auditor AWS's SOC 2 report.
+      relevance: The exam's answer to "where do I get AWS compliance reports?"
+
+  interview:
+    beginner:
+      - question: Explain the shared responsibility model in one sentence.
+        modelAnswer: >-
+          AWS is responsible for security of the cloud (the physical infrastructure and the platforms that run its
+          services), and the customer is responsible for security in the cloud (their data, identities, configuration
+          and anything they run on top).
+      - question: Who patches the operating system of an EC2 instance?
+        modelAnswer: >-
+          The customer. EC2 is infrastructure as a service, so the guest operating system and everything installed on it
+          are yours to patch (AWS Systems Manager Patch Manager can automate it). AWS patches the host and hypervisor.
+    intermediate:
+      - question: How does your responsibility change between EC2, RDS and Lambda?
+        modelAnswer: >-
+          On EC2 you manage the OS, patches, runtime, application, firewall and data. On RDS, AWS manages the OS and
+          database engine patching (within your maintenance window), so you manage database users, network access,
+          encryption settings, backups configuration and data. On Lambda, AWS manages the servers, OS and runtime, so you
+          manage your code, its IAM role, configuration and data. In all cases data and access are yours.
+      - question: An S3 bucket was made public and data leaked. Whose responsibility was it?
+        modelAnswer: >-
+          The customer's. S3 is secure by default (private, Block Public Access on), and access configuration is always
+          the customer's job. AWS provides the controls; the customer chose how to configure them.
+    advanced:
+      - question: How do you prove compliance for a system on AWS to an auditor?
+        modelAnswer: >-
+          For the AWS layer, provide AWS's reports from AWS Artifact (SOC, ISO, PCI attestations) as inherited controls.
+          For your layer, provide evidence of your own controls, such as IAM policies, encryption settings, AWS Config
+          rule compliance history, CloudTrail logs, Security Hub findings and patch reports, plus your processes. Use
+          only AWS services that are in scope for the relevant programme.
+
+  check:
+    - question: >-
+        Step 1 found a security group allowing SSH from 0.0.0.0/0. Under the shared responsibility model, whose job is
+        it to fix that, and why?
+      hints:
+        - Who creates and edits security group rules?
+      answer: >-
+        The customer's. Security group rules are customer configuration (security in the cloud). AWS provides the
+        firewall feature, and you decide what it allows.
+    - question: After step 3, new EBS volumes were encrypted. Who encrypts the data, and who decided it should be encrypted?
+      hints:
+        - Which command did you run?
+      answer: >-
+        AWS performs the encryption (with KMS and the aws/ebs key), but you decided to turn it on. Choosing encryption is
+        the customer's responsibility; operating it is AWS's.
+    - question: Name one thing in this lesson's demo that AWS would be responsible for, not you.
+      hints:
+        - Think about what's underneath the volume and the API.
+      answer: >-
+        For example, the physical disks storing the EBS volume and their destruction at end of life, the data centre's
+        physical security, the KMS hardware protecting the keys, or keeping the Config and IAM services running.
