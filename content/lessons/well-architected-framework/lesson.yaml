@@ -1,0 +1,129 @@
+title: The AWS Well-Architected Framework
+summary: >-
+  The six pillars (operational excellence, security, reliability, performance efficiency, cost optimization,
+  sustainability), their design principles, how a Well-Architected review works, and a scripted mini review that
+  finds and fixes real gaps in a shop backend on Floci.
+estimatedMinutes: 50
+prerequisites:
+  - shared-responsibility-model
+topics:
+  - well-architected
+  - pillars
+  - architecture-review
+  - design-principles
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 1: Cloud Concepts (task 1.2 design principles of the AWS Cloud, the Well-Architected Framework pillars)"
+
+sections:
+  terms:
+    - term: AWS Well-Architected Framework
+      simple: AWS's checklist of good habits for building systems in the cloud.
+      technical: >-
+        A set of pillars, design principles and best-practice questions for evaluating cloud architectures
+        consistently, maintained by AWS and backed by the free Well-Architected Tool in the console.
+      example: Asking "how do you back up data?" and "how do you know when something fails?" about the shop.
+      relevance: CLF-C02 task 1.2 and the vocabulary of every architecture exam.
+    - term: Operational excellence
+      simple: Running the system well and getting better at it over time.
+      technical: >-
+        Supporting development and running workloads effectively, gaining insight into operations, and continuously
+        improving processes. Operations as code, small frequent reversible changes, learning from failures.
+      example: Tags that name an owner, and an alarm when the order table is throttled.
+      relevance: The pillar about people, process and automation.
+    - term: Reliability
+      simple: The system keeps working, and recovers quickly when something breaks.
+      technical: >-
+        Performing the intended function correctly and consistently, including recovering from failure automatically,
+        scaling horizontally, testing recovery and managing change through automation.
+      example: S3 versioning and DynamoDB point-in-time recovery.
+      relevance: Multi-AZ, backups and auto scaling all live here.
+    - term: Performance efficiency
+      simple: Using the right kind and amount of resources so the system stays fast as demand changes.
+      technical: >-
+        Using computing resources efficiently to meet requirements and maintaining efficiency as demand and technology
+        evolve. Use managed and serverless services, go global in minutes, experiment.
+      example: Switching a spiky table from fixed capacity to on-demand.
+      relevance: Choosing the right service and size.
+    - term: Cost optimization
+      simple: Getting the business result at the lowest sensible price.
+      technical: >-
+        Avoiding unnecessary cost through consumption-based models, measuring efficiency, using the right pricing
+        models and storage classes, and attributing expenditure.
+      example: Moving logs older than 30 days to S3 Standard-IA.
+      relevance: Builds on the pricing-models lesson.
+    - term: Sustainability
+      simple: Building systems that use less energy and fewer resources.
+      technical: >-
+        Minimising the environmental impact of workloads by maximising utilisation, using managed services, reducing
+        stored and transferred data, and choosing efficient hardware and Regions. Added as the sixth pillar in 2021.
+      example: Deleting logs after a year instead of keeping them forever.
+      relevance: The newest pillar and an easy exam mark if you remember it exists.
+    - term: Well-Architected review
+      simple: A structured conversation that checks a system against the pillars and lists what to fix.
+      technical: >-
+        Answering the framework's questions for a workload (often in the Well-Architected Tool), identifying high- and
+        medium-risk issues, and producing an improvement plan. Not an audit; a learning and prioritisation exercise.
+      example: The wa-review.sh script found 7 issues and the fixes cleared them.
+      relevance: How companies actually use the framework.
+    - term: Lens
+      simple: An extra set of questions for a specific kind of system.
+      technical: >-
+        A domain-specific extension of the framework, such as the Serverless, SaaS, Machine Learning, Financial
+        Services or Generative AI lens, adding questions and best practices for that context.
+      example: Using the Serverless Lens to review a Lambda-based shop.
+      relevance: Shows the framework is extensible.
+
+  interview:
+    beginner:
+      - question: Name the six pillars of the Well-Architected Framework.
+        modelAnswer: >-
+          Operational excellence, security, reliability, performance efficiency, cost optimization and sustainability.
+      - question: Which pillar does "deploy across multiple Availability Zones" belong to?
+        modelAnswer: >-
+          Mainly reliability, because it keeps the workload available when an AZ fails. It can also support
+          performance efficiency by spreading load.
+    intermediate:
+      - question: Give an example of a trade-off between pillars.
+        modelAnswer: >-
+          Reliability vs. cost. A multi-Region active-active setup gives the best resilience but roughly doubles
+          infrastructure cost. Teams choose the reliability level the business needs (recovery time and data-loss
+          targets) and accept the matching cost. Security and performance can also trade off, e.g. deep packet
+          inspection adds latency.
+      - question: What happens in a Well-Architected review?
+        modelAnswer: >-
+          The team answers the framework's questions about one workload, pillar by pillar, usually in the free
+          Well-Architected Tool. It records evidence and identifies high- and medium-risk issues, then agrees an
+          improvement plan with owners and dates, and repeats the review periodically or after major changes.
+    advanced:
+      - question: How would you make Well-Architected checks continuous instead of a once-a-year review?
+        modelAnswer: >-
+          Turn best practices into automated checks, such as AWS Config rules and conformance packs, Security Hub
+          standards, Trusted Advisor checks, budget and anomaly alerts, and CloudWatch alarms, and fail CI/CD pipelines
+          on policy violations (e.g. IaC scanning). Then use the periodic human review for questions that can't be
+          automated, like process, ownership and design trade-offs.
+
+  check:
+    - question: The first review passed the security check before you fixed anything. Why?
+      hints:
+        - What does AWS do for every new bucket since 2023?
+      answer: >-
+        New S3 buckets have Block Public Access turned on by default (Floci does the same), so BlockPublicPolicy was
+        already True. A secure default.
+    - question: Which two checks failed under reliability, and what does each fix protect against?
+      hints:
+        - Look at step 4.
+      answer: >-
+        Bucket versioning (protects against objects being overwritten or deleted by mistake, by keeping old versions) and
+        DynamoDB point-in-time recovery (lets you restore the table to any second in the last 35 days after bad writes
+        or deletes).
+    - question: One lifecycle rule satisfied two different pillars. Which ones, and how?
+      hints:
+        - Look at the Transitions and Expiration parts of the rule.
+      answer: >-
+        Cost optimization, by moving logs to the cheaper Standard-IA class after 30 days, and sustainability, by deleting
+        logs after 365 days so storage isn't used for data nobody needs.
