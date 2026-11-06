@@ -1,0 +1,120 @@
+title: "AWS APIs: how everything really works"
+summary: >-
+  Every AWS action is an HTTPS API request. How requests are shaped (JSON, query and REST styles), signed with
+  Signature Version 4, answered with errors and HTTP status codes, paginated and retried, shown by taking apart the
+  CLI with --debug and calling Floci directly with curl.
+estimatedMinutes: 45
+prerequisites:
+  - aws-management-console
+topics:
+  - api
+  - sigv4
+  - http
+  - pagination
+  - retries
+  - errors
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-06"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.1 methods of deploying and operating: APIs, CLI, SDKs)"
+
+sections:
+  terms:
+    - term: API (application programming interface)
+      simple: A menu of requests a program can send to a service, and the answers it gets back.
+      technical: >-
+        A defined set of operations, each with input parameters and output shapes. Each AWS service exposes a public
+        HTTPS API, and the console, CLI, SDKs and IaC tools are all clients of it.
+      example: DynamoDB's DescribeTable operation takes a TableName and returns the table's details.
+      relevance: Understanding the API explains every tool and every error message.
+    - term: Endpoint
+      simple: The web address a service listens on.
+      technical: >-
+        The HTTPS URL for a service in a Region, typically https://<service>.<region>.amazonaws.com (some services are
+        global). The CLI's --endpoint-url overrides it, which is how the academy talks to Floci.
+      example: https://dynamodb.ap-south-1.amazonaws.com; in the lab, http://localhost:4566.
+      relevance: Endpoints are why --region matters.
+    - term: Signature Version 4 (SigV4)
+      simple: A tamper-proof stamp on each request, made with your secret key, proving who sent it.
+      technical: >-
+        AWS's request-signing protocol. The client builds a canonical request, derives a signing key from the secret
+        access key plus date, Region and service, and sends an HMAC-SHA256 signature in the Authorization header. The
+        secret key itself is never sent.
+      example: Credential=test/20261106/ap-south-1/dynamodb/aws4_request in the Authorization header.
+      relevance: Explains why clocks, Regions and keys must all be right for a request to succeed.
+    - term: Request ID
+      simple: A unique tracking number AWS gives every request.
+      technical: >-
+        A unique identifier returned in response headers (x-amzn-RequestId, x-amz-request-id) and error bodies, used by
+        AWS Support and in logs to trace a specific call.
+      example: RequestId 195db6aa-… in the NoSuchBucket error.
+      relevance: Always include it when asking AWS Support about a failed call.
+    - term: Pagination
+      simple: Getting a long list in pages instead of all at once.
+      technical: >-
+        List operations return a limited number of results plus a token (NextToken, NextContinuationToken, Marker) to
+        request the next page. The CLI follows tokens automatically unless you use --no-paginate.
+      example: list-objects-v2 with --max-keys 2 returned two keys and IsTruncated true.
+      relevance: Code that ignores pagination silently misses data.
+    - term: Throttling and retries
+      simple: When you send requests too fast, AWS asks you to slow down, and good clients wait and try again.
+      technical: >-
+        APIs have request-rate limits. Exceeding them returns errors such as ThrottlingException (HTTP 400) or
+        SlowDown (HTTP 503). SDKs and the CLI retry retryable errors with exponential backoff and jitter.
+      example: The CLI's debug log shows its retry handler deciding "Not retrying request" after a success.
+      relevance: Robust automation must expect and handle throttling.
+
+  interview:
+    beginner:
+      - question: What happens when you click a button in the AWS console?
+        modelAnswer: >-
+          The console sends a signed HTTPS request to the service's API endpoint, for example CreateBucket to S3. IAM
+          checks the caller's permissions, the service performs the action, and CloudTrail records the API call. The
+          CLI and SDKs send the same kind of request.
+      - question: What does a 4xx vs. a 5xx HTTP status mean in an AWS error?
+        modelAnswer: >-
+          4xx means the client's request was wrong or not allowed (bad parameters, missing resource, access denied,
+          throttling), so fix the request or slow down. 5xx means a server-side or temporary problem, so it's usually
+          safe to retry with backoff.
+    intermediate:
+      - question: Why does AWS use request signing instead of sending the secret key?
+        modelAnswer: >-
+          The secret never travels over the network. The signature proves possession of the key and covers the request's
+          contents, date, Region and service, so a captured request can't be altered, and it expires quickly (requests
+          are valid for a short window), limiting replay.
+      - question: What's an idempotency token, and why do APIs like RunInstances accept one?
+        modelAnswer: >-
+          A unique client-generated value (ClientToken) sent with a create request. If the client retries after a timeout,
+          AWS recognises the same token and returns the original result instead of creating a duplicate, so retries
+          are safe.
+    advanced:
+      - question: A nightly script fails sometimes with ThrottlingException. How do you fix it properly?
+        modelAnswer: >-
+          Use the SDK's retry mode (standard or adaptive) with exponential backoff and jitter, reduce concurrency or
+          batch requests, cache results instead of re-reading, spread work over time, and check whether a service quota
+          increase is available. Make the operations idempotent so retries are safe, and log request IDs for failures.
+
+  check:
+    - question: >-
+        In step 7 the same signed DescribeTable request said the table doesn't exist. What did you change, and why did it
+        matter?
+      hints:
+        - Compare the --aws-sigv4 value in steps 3 and 7.
+      answer: >-
+        The signature's Region changed from ap-south-1 to us-east-1. The Region is part of the SigV4 credential scope,
+        and the service answers for that Region, where the table doesn't exist.
+    - question: Which three API styles did you see in steps 3–5, and how could you tell them apart?
+      hints:
+        - Look at the headers, the body and the URL of each request.
+      answer: >-
+        JSON (DynamoDB: POST to / with an X-Amz-Target header and a JSON body), query (SQS: form-encoded Action=… body
+        and an XML response), and REST (S3: the bucket in the URL path, HTTP verbs and status codes like 404, XML errors).
+    - question: In step 6, how did you know there were more objects to fetch, and what did you send to get them?
+      hints:
+        - Look at the response fields.
+      answer: >-
+        IsTruncated was true and a NextContinuationToken was returned. Sending that token back with --continuation-token
+        fetched the next page.
