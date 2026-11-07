@@ -1,0 +1,111 @@
+title: Working with regions
+summary: >-
+  Day-to-day work across AWS Regions. Regional versus global services and names, Region-specific ARNs, finding
+  resources in every enabled Region, choosing a Region, copying data across Regions, replicating secrets, multi-Region
+  KMS keys, and fencing an account into approved Regions with aws:RequestedRegion, practised against Floci.
+estimatedMinutes: 50
+prerequisites:
+  - aws-credentials
+topics:
+  - regions
+  - global-services
+  - multi-region
+  - data-residency
+  - disaster-recovery
+  - requested-region
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-07"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.2 AWS global infrastructure: Regions, choosing a Region)"
+  - exam: SAA-C03
+    domain: "Domain 2: Design Resilient Architectures (task 2.2 highly available and fault-tolerant architectures: multi-Region)"
+
+sections:
+  terms:
+    - term: Regional service
+      simple: A service whose resources live in one Region and are only seen there.
+      technical: >-
+        A service with separate endpoints, resources and data per Region (EC2, SQS, DynamoDB, Lambda, KMS, Secrets
+        Manager…). Its ARNs contain the Region, and API calls only see resources in the Region they are sent to.
+      example: Two queues named ama-l2-reg-orders existed in ap-south-1 and eu-west-1 with different ARNs.
+      relevance: The most common reason someone "can't find" a resource is looking in the wrong Region.
+    - term: Global service
+      simple: A service that works the same everywhere, not tied to one Region.
+      technical: >-
+        A service whose control plane is global, such as IAM, Organizations, CloudFront, Route 53 and (by default) STS.
+        Their ARNs have an empty Region field, and their requests count as us-east-1 for aws:RequestedRegion.
+      example: The IAM user created while using ap-south-1 was visible from eu-west-1, with ARN arn:aws:iam::000000000000:user/ama-l2-reg-auditor.
+      relevance: Global services must be exempted when restricting Regions.
+    - term: aws:RequestedRegion
+      simple: A policy condition that checks which Region a request is going to.
+      technical: >-
+        A global IAM condition key containing the Region of the endpoint a request is sent to. Used in SCPs and IAM
+        policies (StringNotEquals with a Deny) to allow only approved Regions, usually with NotAction exemptions for
+        global services.
+      example: The india-only policy denied ec2:RunInstances in eu-west-1 but allowed it in ap-south-1.
+      relevance: The standard control for data residency and stopping resources in unexpected Regions.
+    - term: Cross-Region replication
+      simple: Keeping a copy of data in a second Region automatically.
+      technical: >-
+        Service features that copy data between Regions asynchronously, such as S3 Cross-Region Replication, DynamoDB
+        global tables, Secrets Manager replica secrets, Aurora global databases, and ECR replication.
+      example: The secret ama-l2-reg-db was replicated from ap-south-1 to ap-south-2 with status InSync.
+      relevance: The basis of disaster recovery when a whole Region is unavailable.
+    - term: Multi-Region KMS key
+      simple: An encryption key that exists as matching copies in several Regions.
+      technical: >-
+        A KMS key (ID starting mrk-) with a primary and replica keys that share key material and key ID, so ciphertext
+        from one Region can be decrypted in another. Each copy is managed separately in its Region.
+      example: Ciphertext made in ap-south-1 decrypted to card-vault-secret in ap-south-2.
+      relevance: Needed when encrypted data is replicated across Regions.
+
+  interview:
+    beginner:
+      - question: A colleague created an EC2 instance but you can't see it in the console. What do you check first?
+        modelAnswer: >-
+          The Region selector. EC2 is a Regional service, so the console and CLI only show resources in the selected
+          Region. Ask which Region they used, or run a loop over all enabled Regions.
+      - question: Name two global services and two Regional services.
+        modelAnswer: >-
+          Global services include IAM and CloudFront (also Route 53 and Organizations). Regional ones include EC2, SQS, DynamoDB, Lambda and KMS. S3 is
+          Regional for data, but bucket names are global.
+    intermediate:
+      - question: What four factors decide which Region to use?
+        modelAnswer: >-
+          Compliance and data residency (laws about where data may be stored), latency to users, service and feature
+          availability in that Region, and price, which differs between Regions.
+      - question: How would you restrict an AWS account so resources can only be created in two Regions?
+        modelAnswer: >-
+          Attach an SCP (or IAM policy) that denies actions when aws:RequestedRegion is not one of the two Regions,
+          using NotAction to exempt global services such as IAM, STS, Organizations, CloudFront, Route 53 and Support.
+          Test it with the IAM policy simulator first.
+    advanced:
+      - question: Your application in Mumbai must survive a Regional outage. Which data must exist in the second Region before the outage?
+        modelAnswer: >-
+          Everything the application needs to start: replicated data (S3 CRR, DynamoDB global tables or Aurora global
+          database), secrets (Secrets Manager replicas), encryption keys able to decrypt that data (multi-Region KMS
+          keys), container images (ECR replication), AMIs and snapshots copied in advance, and infrastructure as code
+          to recreate the rest. Nothing can be copied out of a Region that is unavailable.
+
+  check:
+    - question: In step 1 both queues had the same URL in Floci. How did you prove they were different queues?
+      hints:
+        - Look at the ARNs and the message counts.
+      answer: >-
+        Their ARNs contained different Regions (ap-south-1 and eu-west-1), and the message sent in Mumbai was only in
+        Mumbai's queue (1 versus 0).
+    - question: Why did creating ama-l2-reg-menus-mumbai in eu-west-1 fail even though S3 is a Regional service?
+      hints:
+        - What is unique about S3 bucket names?
+      answer: >-
+        Bucket names are globally unique across all Regions (and all accounts). Data lives in one Region, but a name
+        can only be used once.
+    - question: In step 7, why was iam:CreateUser allowed when its requested Region was us-east-1?
+      hints:
+        - Look at the policy's NotAction list.
+      answer: >-
+        IAM is a global service whose requests count as us-east-1. The Deny statement uses NotAction to exempt iam:* and
+        other global services, so the Region condition doesn't apply to them.
