@@ -1,0 +1,111 @@
+title: IAM from absolute zero
+summary: >-
+  What AWS Identity and Access Management is and how it decides every request. The root user, identities versus
+  permissions, authentication versus authorization, account aliases, password policies, console passwords, virtual MFA,
+  the default-deny, allow and explicit-deny rules, and requiring MFA for dangerous actions, practised against Floci.
+estimatedMinutes: 50
+prerequisites:
+  - arns
+topics:
+  - iam
+  - root-user
+  - authentication
+  - authorization
+  - mfa
+  - password-policy
+  - policy-evaluation
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-07"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (task 2.3 AWS access management capabilities, root user, MFA, least privilege)"
+  - exam: SAA-C03
+    domain: "Domain 1: Design Secure Architectures (task 1.1 secure access to AWS resources)"
+
+sections:
+  terms:
+    - term: IAM
+      simple: The AWS service that decides who you are and what you are allowed to do.
+      technical: >-
+        AWS Identity and Access Management, a global, free service that manages identities (users, groups, roles),
+        their credentials (passwords, access keys, MFA) and the policies that authorize every AWS API request.
+      example: In the lab, IAM held the user ama-l3-iam-priya, her password, her MFA device and her policies.
+      relevance: Every AWS request, from the console or code, is checked by IAM first.
+    - term: Root user
+      simple: The all-powerful identity created together with the AWS account.
+      technical: >-
+        The identity that signs in with the account's email address and password. It has unrestricted access that IAM
+        policies can't limit (only Organizations SCPs can), so it should have MFA, no access keys, and be used only for
+        the few tasks that require it.
+      example: The caller in step 1 was arn:aws:iam::000000000000:root, and the summary showed RootMFA 0.
+      relevance: A stolen root password means losing the whole account.
+    - term: Authentication versus authorization
+      simple: Authentication proves who you are; authorization decides what you may do.
+      technical: >-
+        Authentication uses credentials (password plus MFA, access keys, or temporary credentials). Authorization
+        evaluates the identity's policies, and any resource policies, SCPs and boundaries, against the requested action
+        and resource.
+      example: Priya could authenticate with a password and MFA, yet every action was implicitDeny until a policy allowed it.
+      relevance: Many access problems are authorization problems even when sign-in works.
+    - term: MFA
+      simple: A second proof of identity, usually a 6-digit code that changes every 30 seconds.
+      technical: >-
+        Multi-factor authentication. A virtual device (authenticator app), passkey or hardware key shares a secret with
+        AWS. TOTP codes are computed from that secret and the time. Policies can require it with the condition key
+        aws:MultiFactorAuthPresent.
+      example: Two consecutive codes from the seed in mfa-seed.txt enabled the device; made-up codes were rejected.
+      relevance: MFA stops most attacks that use stolen passwords.
+    - term: Implicit and explicit deny
+      simple: Everything is forbidden unless allowed, and a written "no" always beats a "yes".
+      technical: >-
+        If no policy allows a request, the result is implicitDeny (the default). If any applicable policy has a Deny
+        statement that matches, the result is explicitDeny, which overrides every Allow.
+      example: ReadOnlyAccess allowed dynamodb Scan until an inline Deny made it explicitDeny.
+      relevance: This rule explains almost every IAM permission puzzle.
+
+  interview:
+    beginner:
+      - question: What should you do with the root user of a new AWS account?
+        modelAnswer: >-
+          Enable MFA on it, make sure it has no access keys, use a strong unique password, create IAM Identity Center or
+          IAM identities for daily work, and use root only for the few tasks that require it, such as closing the
+          account or changing the support plan.
+      - question: A new IAM user can sign in but can't do anything. Why?
+        modelAnswer: >-
+          IAM denies everything by default. Signing in is authentication; the user still needs a policy that allows
+          the actions, directly or through a group or role.
+    intermediate:
+      - question: A user has AdministratorAccess and an inline policy denying s3 DeleteBucket. Can they delete a bucket?
+        modelAnswer: >-
+          No. An explicit Deny always overrides any Allow, including AdministratorAccess.
+      - question: How can you make sure users only terminate EC2 instances when they signed in with MFA?
+        modelAnswer: >-
+          Add a Deny statement for ec2 TerminateInstances with the condition BoolIfExists aws:MultiFactorAuthPresent
+          false. BoolIfExists also denies requests made with long-term keys, where the key is absent.
+    advanced:
+      - question: Why is IAM described as a global service, and what does that mean for changes?
+        modelAnswer: >-
+          IAM identities and policies are not tied to a Region; a user or policy change applies in every Region. Changes
+          are eventually consistent, so new permissions can take a few seconds to apply everywhere, and code should not
+          assume an immediately created role is usable in the next millisecond.
+
+  check:
+    - question: In step 3, why was the first password rejected?
+      hints:
+        - Look at what you set in step 2.
+      answer: >-
+        The account password policy required at least 14 characters including an uppercase letter and a symbol, and
+        priya123 had neither.
+    - question: In step 5, why was sqs DeleteQueue denied even after ReadOnlyAccess was attached?
+      hints:
+        - Is there any policy that allows it?
+      answer: >-
+        ReadOnlyAccess only allows read actions. Nothing allowed DeleteQueue, so the default implicit deny applied.
+    - question: In step 7, why did the first delete-user fail?
+      hints:
+        - Read the DeleteConflict message.
+      answer: >-
+        The user still had policies (and an MFA device and login profile) attached. IAM requires removing them before a
+        user can be deleted.
