@@ -28,7 +28,7 @@ export function Card({
           {title && (
             <h2 className="flex items-center gap-2 text-[15px] font-semibold text-ink-900">
               {icon && (
-                <span className="text-slate-400">{icon}</span>
+                <span className="grid h-7 w-7 place-items-center rounded-md bg-brand-50 text-brand-600">{icon}</span>
               )}
               {title}
             </h2>
@@ -142,7 +142,18 @@ export function Pill({ children, title }: { children: ReactNode; title?: string 
 /* Progress                                                            */
 /* ------------------------------------------------------------------ */
 
-export function ProgressBar({ value, label, tone = "brand" }: { value: number; label: string; tone?: "brand" | "green" }) {
+export function ProgressBar({
+  value,
+  label,
+  tone = "brand",
+  fill,
+}: {
+  value: number;
+  label: string;
+  tone?: "brand" | "green";
+  /** Optional Tailwind background class for the filled part, e.g. "bg-sky-500". */
+  fill?: string;
+}) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <div
@@ -154,7 +165,7 @@ export function ProgressBar({ value, label, tone = "brand" }: { value: number; l
       className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100"
     >
       <div
-        className={`h-full rounded-full ${tone === "green" ? "bg-emerald-500" : "bg-brand-500"}`}
+        className={`h-full rounded-full ${fill ?? (tone === "green" ? "bg-emerald-500" : "bg-brand-500")}`}
         style={{ width: `${Math.max(clamped, clamped > 0 ? 3 : 0)}%` }}
       />
     </div>

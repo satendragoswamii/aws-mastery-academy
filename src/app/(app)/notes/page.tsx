@@ -72,7 +72,7 @@ async function NotesAndBookmarks() {
           >
             <ul className="flex flex-col gap-3">
               {items.map((n) => (
-                <li key={n.id} className="rounded-lg border border-slate-200 p-4">
+                <li key={n.id} className="rounded-lg bg-amber-50/60 p-4 ring-1 ring-amber-100">
                   <NoteItem id={n.id} body={n.body} updatedAt={formatDateTime(n.updatedAt)} />
                 </li>
               ))}

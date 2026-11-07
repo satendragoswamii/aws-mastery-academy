@@ -8,13 +8,8 @@ import { lessons } from "@/content/load";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getProgressMap } from "@/lib/learning/progress";
 import { ProgressBar, StatusBadge } from "@/components/ui";
+import { LEVEL_STYLE, TIER_STYLE } from "@/components/learn/stage-colors";
 
-const TIER_TEXT: Record<string, string> = {
-  verified_floci: "Hands-on in Floci",
-  partial_floci: "Partly hands-on in Floci",
-  conceptual: "Concept lesson",
-  requires_real_aws: "Needs real AWS",
-};
 
 export default function CurriculumPage() {
   return (
@@ -33,9 +28,6 @@ export default function CurriculumPage() {
   );
 }
 
-const LEVEL_STYLE = [
-  { soft: "text-slate-500" },
-];
 
 async function CurriculumWithProgress() {
   const user = await getCurrentUser();
@@ -54,8 +46,8 @@ async function CurriculumWithProgress() {
           <section key={level.id}>
             <header className="grid gap-4 md:grid-cols-[minmax(0,1fr)_260px] md:items-end">
               <div>
-                <p className="text-sm text-slate-500">Level {level.number}</p>
-                <h2 className="text-xl font-semibold tracking-tight text-ink-900">{level.title}</h2>
+                <p className={`inline-flex rounded-md px-2 py-0.5 text-xs font-semibold ${style.badge}`}>Level {level.number}</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-tight text-ink-900">{level.title}</h2>
                 <p className="mt-1 max-w-2xl text-sm text-slate-500">{level.description}</p>
               </div>
               <div>
@@ -65,14 +57,14 @@ async function CurriculumWithProgress() {
                   </span>
                   <span>{mastered} mastered</span>
                 </div>
-                <ProgressBar value={(mastered / levelLessons.length) * 100} label={`Level ${level.number} mastered`} tone="green" />
+                <ProgressBar value={(mastered / levelLessons.length) * 100} label={`Level ${level.number} mastered`} fill={style.bar} />
               </div>
             </header>
 
             <div className="mt-6 grid gap-x-10 gap-y-8 lg:grid-cols-2">
               {level.modules.map((m) => (
                 <div key={m.id}>
-                  <h3 className={`mb-2 text-xs font-semibold uppercase tracking-wider ${style.soft}`}>
+                  <h3 className={`mb-2 text-xs font-semibold uppercase tracking-wider ${style.text}`}>
                     {m.title}
                   </h3>
                   <ol className="divide-y divide-slate-100 rounded-lg border border-slate-200">
@@ -109,8 +101,10 @@ async function CurriculumWithProgress() {
                                 <span className="inline-flex items-center gap-1">
                                   <Clock aria-hidden className="h-3.5 w-3.5" />~{lesson.estimatedMinutes} min
                                 </span>
-                                <span aria-hidden>·</span>
-                                <span>{TIER_TEXT[lesson.labTier] ?? "Concept lesson"}</span>
+                                <span className={`inline-flex items-center gap-1.5 ${(TIER_STYLE[lesson.labTier] ?? TIER_STYLE.conceptual).text}`}>
+                                  <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${(TIER_STYLE[lesson.labTier] ?? TIER_STYLE.conceptual).dot}`} />
+                                  {(TIER_STYLE[lesson.labTier] ?? TIER_STYLE.conceptual).label}
+                                </span>
                               </span>
                             ) : (
                               <span className="text-xs text-slate-400">Coming soon</span>

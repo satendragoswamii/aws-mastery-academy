@@ -55,7 +55,7 @@ body {
 .lesson-prose > h2:first-child {
   font-size: 1.15rem;
   font-weight: 500;
-  color: var(--color-slate-500);
+  color: var(--accent, var(--color-brand-600));
   letter-spacing: 0;
   margin-top: 0;
 }
@@ -68,12 +68,25 @@ body {
   line-height: 1.35;
 }
 .lesson-prose h3 {
+  position: relative;
   font-size: 1.1rem;
   font-weight: 650;
   color: var(--color-ink-900);
   margin-top: 2em;
   letter-spacing: -0.01em;
   line-height: 1.4;
+  padding-left: 0.85rem;
+}
+/* A short bar in the section's colour marks every sub-heading. */
+.lesson-prose h3::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.22em;
+  bottom: 0.22em;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent, var(--color-brand-500));
 }
 .lesson-prose h3 + * {
   margin-top: 0.6em;
@@ -86,14 +99,14 @@ body {
   list-style: disc;
 }
 .lesson-prose ul > li::marker {
-  color: var(--color-slate-400);
+  color: var(--accent, var(--color-brand-500));
 }
 .lesson-prose ol {
   list-style: decimal;
 }
 .lesson-prose ol > li::marker {
-  color: var(--color-slate-500);
-  font-weight: 600;
+  color: var(--accent, var(--color-brand-600));
+  font-weight: 650;
 }
 .lesson-prose li {
   padding-left: 0.25em;
@@ -117,8 +130,8 @@ body {
 
 /* "> Note" callouts: a quiet left rule, no emoji. */
 .lesson-prose blockquote {
-  border-left: 3px solid var(--color-brand-400);
-  background: var(--color-slate-50);
+  border-left: 3px solid var(--accent, var(--color-brand-500));
+  background: color-mix(in srgb, var(--accent, var(--color-brand-500)) 7%, white);
   padding: 0.85em 1.1em;
   border-radius: 0 8px 8px 0;
   color: var(--color-ink-800);
@@ -210,7 +223,7 @@ body {
   border-bottom: none;
 }
 .lesson-prose th {
-  background: var(--color-slate-50);
+  background: color-mix(in srgb, var(--accent, var(--color-brand-500)) 7%, white);
   font-weight: 600;
   color: var(--color-ink-900);
   white-space: nowrap;

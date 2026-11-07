@@ -10,18 +10,13 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { getProgressMap } from "@/lib/learning/progress";
 import { LessonHeader } from "@/components/lesson-header";
 import { SECTION_ICONS } from "@/components/learn/section-icons";
+import { STAGES, STAGE_STYLE } from "@/components/learn/stage-colors";
 import { ButtonLink, Card, StatusBadge } from "@/components/ui";
 
 export function generateStaticParams() {
   return [...lessons().keys()].map((slug) => ({ slug }));
 }
 
-/** The 14 sections, grouped into the three stages of learning a topic. */
-const STAGES = [
-  { title: "Understand it", ids: ["what", "why", "how", "terms", "architecture", "real-world"] },
-  { title: "Try it", ids: ["demo", "cli", "troubleshooting", "security"] },
-  { title: "Prove it", ids: ["certification", "interview", "check", "assignment"] },
-] as const;
 
 export default async function LessonOverviewPage({ params }: PageProps<"/learn/[slug]">) {
   const { slug } = await params;
@@ -46,8 +41,9 @@ export default async function LessonOverviewPage({ params }: PageProps<"/learn/[
       <Card title="What you'll do in this lesson" icon={<ListChecks className="h-4 w-4" />}>
         <div className="grid gap-6 md:grid-cols-3">
           {STAGES.map((stage) => (
-            <div key={stage.title}>
-              <p className="mb-2 text-sm font-semibold text-ink-800">
+            <div key={stage.title} className={`rounded-lg p-3 ${STAGE_STYLE[stage.id].soft}`}>
+              <p className={`mb-2 flex items-center gap-2 px-2.5 text-sm font-semibold ${STAGE_STYLE[stage.id].text}`}>
+                <span aria-hidden className={`h-2 w-2 rounded-full ${STAGE_STYLE[stage.id].dot}`} />
                 {stage.title}
               </p>
               <ol className="flex flex-col gap-1.5">
@@ -58,10 +54,10 @@ export default async function LessonOverviewPage({ params }: PageProps<"/learn/[
                     <li key={id}>
                       <Link
                         href={`/learn/${slug}/${id}`}
-                        className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-ink-900"
+                        className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-white hover:text-ink-900"
                       >
-                        <span className="text-slate-400">
-                          <Icon aria-hidden className="h-4 w-4" />
+                        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-md ${STAGE_STYLE[stage.id].tile}`}>
+                          <Icon aria-hidden className="h-3.5 w-3.5" />
                         </span>
                         <span>
                           <span className="mr-1.5 font-mono text-xs text-slate-400">{s.letter}</span>

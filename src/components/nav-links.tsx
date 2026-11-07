@@ -24,7 +24,7 @@ export function NavLinks() {
             aria-current={active ? "page" : undefined}
             title={label}
             className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1.5 font-medium transition-colors ${
-              active ? "bg-slate-100 text-ink-900" : "text-slate-500 hover:bg-slate-50 hover:text-ink-900"
+              active ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-50 hover:text-ink-900"
             }`}
           >
             <Icon aria-hidden className="h-4 w-4 md:hidden" />

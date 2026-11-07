@@ -26,6 +26,7 @@ import { listBookmarks, listNotes } from "@/lib/learning/progress";
 import { loadDashboard } from "@/lib/learning/server";
 import { dayInZone } from "@/lib/learning/streak";
 import { ButtonLink, Card, EmptyState, ProgressBar } from "@/components/ui";
+import { LEVEL_STYLE } from "@/components/learn/stage-colors";
 
 export default function DashboardPage() {
   return (
@@ -86,21 +87,21 @@ async function Dashboard() {
           <p className="mt-1.5 max-w-md text-slate-500">{encouragementFor(dayInZone(now, tz))}</p>
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1.5">
-              <Flame aria-hidden className="h-4 w-4 text-slate-400" />
+              <Flame aria-hidden className="h-4 w-4 text-amber-500" />
               {d.streak.current} day streak
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <Target aria-hidden className="h-4 w-4 text-slate-400" />
+              <Target aria-hidden className="h-4 w-4 text-sky-500" />
               {LEVEL_LABEL[profile?.level ?? "absolute_beginner"]} track
             </span>
           </div>
         </div>
 
         {/* Continue card */}
-        <div className="rounded-xl border border-slate-200 p-5">
+        <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-5">
           {d.resume ? (
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Continue learning</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">Continue learning</p>
               <p className="mt-1 truncate text-lg font-semibold text-ink-900">{d.resume.title}</p>
               <p className="text-sm text-slate-500">You stopped at {sectionTitle(d.resume.section)}</p>
               <div className="mt-3 flex items-center gap-3">
@@ -115,7 +116,7 @@ async function Dashboard() {
             </div>
           ) : d.recommended ? (
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Your first lesson</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-600">Your first lesson</p>
               <p className="mt-1 text-lg font-semibold text-ink-900">{d.recommended.title}</p>
               <p className="text-sm text-slate-500">Start here. It assumes you know nothing yet.</p>
             </div>
@@ -195,7 +196,7 @@ async function Dashboard() {
                       isNext
                         ? "bg-brand-500 text-white"
                         : p.available
-                          ? "bg-white text-slate-500 ring-1 ring-slate-200"
+                          ? "bg-sky-50 text-sky-600 ring-1 ring-sky-100"
                           : "bg-slate-50 text-slate-300"
                     }`}
                   >
@@ -233,13 +234,13 @@ async function Dashboard() {
                 <li key={lv.levelId}>
                   <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
                     <span className="font-medium text-ink-800">
-                      Level {level?.number}: {level?.title}
+                      <span className={LEVEL_STYLE[(level?.number ?? 1) - 1]?.text}>Level {level?.number}</span>: {level?.title}
                     </span>
                     <span className="whitespace-nowrap text-xs text-slate-500">
                       {lv.mastered}/{lv.total} mastered
                     </span>
                   </div>
-                  <ProgressBar value={lv.total ? (lv.mastered / lv.total) * 100 : 0} label={`Level ${level?.number} mastered`} tone="green" />
+                  <ProgressBar value={lv.total ? (lv.mastered / lv.total) * 100 : 0} label={`Level ${level?.number} mastered`} fill={LEVEL_STYLE[(level?.number ?? 1) - 1]?.bar} />
                   <p className="mt-1 text-xs text-slate-500">
                     {lv.started} started · {lv.available} written so far
                   </p>
@@ -313,7 +314,7 @@ async function Dashboard() {
                   href={`/learn/${b.lessonSlug}/${b.section}`}
                   className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
                 >
-                  <Bookmark aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
+                  <Bookmark aria-hidden className="h-4 w-4 shrink-0 text-brand-500" />
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-ink-800">{getLesson(b.lessonSlug)?.title ?? b.lessonSlug}</span>
                     <span className="text-xs text-slate-500">{sectionTitle(b.section)}</span>
@@ -321,8 +322,8 @@ async function Dashboard() {
                 </Link>
               ))}
               {notes.slice(0, 3).map((n) => (
-                <div key={n.id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
-                  <StickyNote aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
+                <div key={n.id} className="flex gap-3 rounded-lg bg-amber-50/60 p-3 ring-1 ring-amber-100">
+                  <StickyNote aria-hidden className="h-4 w-4 shrink-0 text-amber-500" />
                   <div className="min-w-0">
                     <p className="line-clamp-2 whitespace-pre-wrap text-ink-800">{n.body}</p>
                     {n.lessonSlug && <p className="mt-1 text-xs text-slate-500">{getLesson(n.lessonSlug)?.title ?? n.lessonSlug}</p>}
@@ -338,10 +339,10 @@ async function Dashboard() {
 }
 
 const TONES = {
-  orange: "text-slate-400",
-  sky: "text-slate-400",
-  green: "text-slate-400",
-  violet: "text-slate-400",
+  orange: "bg-amber-50 text-amber-600 ring-1 ring-amber-100",
+  sky: "bg-sky-50 text-sky-600 ring-1 ring-sky-100",
+  green: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100",
+  violet: "bg-violet-50 text-violet-600 ring-1 ring-violet-100",
 } as const;
 
 function StatTile({
@@ -359,11 +360,11 @@ function StatTile({
 }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex items-center gap-2">
-        <span className={`[&>svg]:h-4 [&>svg]:w-4 ${TONES[tone]}`}>{icon}</span>
+      <div className="flex items-center gap-2.5">
+        <span className={`grid h-8 w-8 place-items-center rounded-lg [&>svg]:h-4 [&>svg]:w-4 ${TONES[tone]}`}>{icon}</span>
         <span className="text-sm text-slate-500">{label}</span>
       </div>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{value}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-tight text-ink-900">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   );
