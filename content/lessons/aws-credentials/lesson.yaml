@@ -1,0 +1,122 @@
+title: AWS credentials
+summary: >-
+  The kinds of AWS credentials and how to handle them safely. Passwords versus access keys, the access key ID and
+  secret, key metadata and the 2-key limit, zero-downtime rotation, the credential report, temporary credentials from
+  STS AssumeRole, session tokens and expiry, and role profiles, practised against Floci.
+estimatedMinutes: 55
+prerequisites:
+  - aws-sdk
+topics:
+  - credentials
+  - access-keys
+  - key-rotation
+  - sts
+  - assume-role
+  - temporary-credentials
+  - role-profiles
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-07"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (task 2.3 identify AWS access management capabilities: credentials, access keys, rotation)"
+  - exam: SAA-C03
+    domain: "Domain 1: Design Secure Architectures (task 1.1 secure access to AWS resources: roles and temporary credentials)"
+
+sections:
+  terms:
+    - term: Access key
+      simple: A username-and-password pair for programs, used instead of signing in with a browser.
+      technical: >-
+        A long-term credential of an IAM user (or the root user) made of an access key ID (AKIA…) and a 40-character
+        secret access key, used to sign API requests. The secret is shown only once, at creation. Each user can have
+        at most two.
+      example: KEY1 was created for ama-l2-cred-dev and saved straight into the ama-dev profile without printing the secret.
+      relevance: Leaked access keys are one of the most common causes of AWS security incidents.
+    - term: Key rotation
+      simple: Replacing an old key with a new one regularly, so a leaked key stops working.
+      technical: >-
+        Create a second key, update every application to use it, confirm it works, set the old key Inactive, watch
+        for failures, then delete the old key. The two-key limit exists to allow this without downtime.
+      example: Step 4 switched ama-dev to KEY2, deactivated KEY1 and then deleted it.
+      relevance: Security standards and auditors expect long-term keys to be rotated (commonly every 90 days) or removed.
+    - term: Temporary credentials
+      simple: Keys that work only for a short time and then stop by themselves.
+      technical: >-
+        Credentials issued by AWS STS (AssumeRole, GetSessionToken, AssumeRoleWithWebIdentity, AssumeRoleWithSAML, IAM
+        Identity Center) made of an access key ID (ASIA…), a secret and a session token, valid from 15 minutes up to
+        the role's maximum session duration (1 to 12 hours).
+      example: assume-role with --duration-seconds 900 returned an ASIA key, a session token and an Expiration time.
+      relevance: The recommended way for people, applications and AWS services to access AWS.
+    - term: AWS STS
+      simple: The AWS service that hands out temporary credentials.
+      technical: >-
+        AWS Security Token Service, a global service with Regional endpoints, whose operations include AssumeRole,
+        GetSessionToken, GetCallerIdentity and GetFederationToken.
+      example: sts get-caller-identity showed assumed-role/ama-l2-cred-readonly/asha after assuming the role.
+      relevance: Every role, federation and cross-account access in AWS goes through STS.
+    - term: Session token
+      simple: The third piece of temporary credentials, proving they were issued by STS.
+      technical: >-
+        An opaque token that must accompany a temporary access key ID and secret on every request (the
+        X-Amz-Security-Token header, or AWS_SESSION_TOKEN). Without it, temporary keys are rejected.
+      example: The token from step 6 was 200 characters long on Floci; real tokens are often much longer.
+      relevance: Forgetting AWS_SESSION_TOKEN is a classic cause of "invalid token" errors.
+    - term: Role profile
+      simple: A CLI profile that says "use these other keys to switch into this role".
+      technical: >-
+        A profile with role_arn plus source_profile (or credential_source on AWS compute). The CLI and SDKs call
+        AssumeRole automatically and cache the temporary credentials until they expire.
+      example: The ama-readonly profile contains no keys, only role_arn and source_profile = ama-dev.
+      relevance: The everyday way engineers work across many accounts and roles from one login.
+
+  interview:
+    beginner:
+      - question: What is the difference between a password and an access key?
+        modelAnswer: >-
+          A password signs a person in to the AWS Management Console. An access key (access key ID plus secret access
+          key) signs API requests from the CLI, SDKs and tools. A user can have one, both or neither, and both should
+          be protected; for people, MFA protects console sign-in.
+      - question: Why are temporary credentials safer than access keys?
+        modelAnswer: >-
+          They expire on their own (minutes to hours), so a leaked copy soon becomes useless, and they are issued for
+          a role, with a session name recorded in CloudTrail. Long-term access keys work until someone deactivates
+          them, which can be years.
+    intermediate:
+      - question: Describe how you would rotate an access key used by a running application without downtime.
+        modelAnswer: >-
+          Create a second key (users can have two), deploy it to the application, verify the application works and the
+          new key is being used (key last-used information), deactivate the old key, watch for errors for a while, then
+          delete it. If anything breaks, reactivate the old key.
+      - question: An engineer gets InvalidClientTokenId with keys starting with ASIA. What is the likely cause?
+        modelAnswer: >-
+          ASIA keys are temporary; they need the matching session token, and they expire. Either AWS_SESSION_TOKEN
+          is missing or wrong, or the credentials have expired and must be obtained again.
+    advanced:
+      - question: How should a company with 30 accounts give engineers CLI access without any long-term keys?
+        modelAnswer: >-
+          Use IAM Identity Center with permission sets per account; engineers run aws sso login and use SSO
+          profiles, or chain into roles with role profiles. Workloads use roles (instance profiles, task roles,
+          Lambda execution roles, OIDC for CI/CD). Remove IAM user access keys, alert on any new ones, and audit with
+          the credential report and IAM Access Analyzer.
+
+  check:
+    - question: In step 4, why did the third create-access-key fail, and why does that limit help?
+      hints:
+        - Look at the error's quota name.
+      answer: >-
+        A user can have at most two access keys (AccessKeysPerUser 2). Two is exactly what rotation needs: the old key
+        keeps working while applications move to the new one.
+    - question: How can you tell from the key ID alone that the step 6 credentials were temporary?
+      hints:
+        - Compare the first four letters with step 2.
+      answer: >-
+        Long-term IAM user keys start with AKIA; temporary STS keys start with ASIA. They also came with a session
+        token and an Expiration time.
+    - question: Why does every lab profile contain endpoint_url, even though every command also passes --endpoint-url?
+      hints:
+        - Who makes the AssumeRole call for a role profile?
+      answer: >-
+        For a role profile, the CLI makes the AssumeRole call itself, and that call ignores the --endpoint-url option.
+        Without the endpoint_url setting it went to real AWS STS. The profile setting keeps it on Floci.
