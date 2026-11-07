@@ -1,0 +1,121 @@
+title: AWS SDKs
+summary: >-
+  Calling AWS from your own code. Clients and commands, the default credential and Region chain, waiters,
+  paginators, typed errors, automatic retries and the DynamoDB document client, practised with the AWS SDK for
+  JavaScript v3 in Node.js against Floci.
+estimatedMinutes: 55
+prerequisites:
+  - aws-cli
+topics:
+  - aws-sdk
+  - javascript
+  - credential-provider-chain
+  - pagination
+  - waiters
+  - error-handling
+  - retries
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-07"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 3: Cloud Technology and Services (task 3.1 methods of deploying and operating: AWS SDKs)"
+  - exam: DVA-C02
+    domain: "Domain 1: Development with AWS Services (task 1.1 develop code for applications hosted on AWS)"
+
+sections:
+  terms:
+    - term: AWS SDK
+      simple: A library that lets your program talk to AWS in its own programming language.
+      technical: >-
+        A language-specific library (JavaScript, Python/boto3, Java, Go, .NET, and others) generated from the same
+        service models as the CLI. It builds, signs (SigV4), sends and retries API requests and turns responses and
+        errors into native objects.
+      example: s3.send(new GetObjectCommand({ Bucket, Key })) instead of hand-writing a signed HTTP request.
+      relevance: Every application that uses AWS (a website, a Lambda function, a mobile backend) uses an SDK.
+    - term: Client
+      simple: The object in your code that knows how to reach one AWS service.
+      technical: >-
+        A per-service object (S3Client, DynamoDBClient) holding configuration (Region, credentials, endpoint, retry
+        settings) and an HTTP connection pool. In SDK v3 you call client.send(command).
+      example: new S3Client({ region, endpoint, credentials, forcePathStyle }) in lab-config.mjs.
+      relevance: Create clients once and reuse them; creating one per request wastes time and connections.
+    - term: Default credential provider chain
+      simple: The list of places the SDK looks for keys when your code doesn't give it any.
+      technical: >-
+        An ordered search: environment variables, the shared config and credentials files (profile), SSO and role
+        settings in the profile, web identity tokens, then container (ECS) and instance (EC2) metadata. The first
+        source that returns credentials is used; the Region has a similar chain.
+      example: chain.mjs printed lab-env-key from AWS_ACCESS_KEY_ID and lab-profile-key from the ama-sdk profile.
+      relevance: It is why the same code runs on a laptop, in Lambda and on EC2 without containing any keys.
+    - term: Paginator
+      simple: A helper that keeps asking "next page, please" until every result has arrived.
+      technical: >-
+        An async iterator (paginateListObjectsV2 and similar) that repeats a List or Describe call, passing the
+        continuation token from each response into the next request until no token is returned.
+      example: With pageSize 2 the paginator returned 5 objects in 3 pages; a single call returned only 2.
+      relevance: Forgetting pagination is one of the most common bugs in AWS code.
+    - term: Waiter
+      simple: A helper that checks again and again until a resource is ready.
+      technical: >-
+        A function (waitUntilBucketExists, waitUntilTableExists) that polls a Describe or Head operation with
+        back-off until a success or failure condition, or until maxWaitTime runs out.
+      example: waitUntilTableExists returned state SUCCESS once the table was ACTIVE.
+      relevance: Many resources take time to create; code must wait instead of assuming they are ready.
+    - term: Retries
+      simple: Trying a failed request again automatically, after a short pause.
+      technical: >-
+        The SDK retries throttling, 5xx and network errors with exponential back-off and jitter, up to maxAttempts
+        (3 by default in standard mode). err.$metadata.attempts shows how many attempts were made.
+      example: The request to a closed port failed with ECONNREFUSED after attempts 3.
+      relevance: Built-in retries make applications survive brief failures without extra code.
+
+  interview:
+    beginner:
+      - question: What is the difference between the AWS CLI and an AWS SDK?
+        modelAnswer: >-
+          Both turn your intent into signed AWS API calls and both are generated from the same service models. The
+          CLI is a command-line program for people and shell scripts; an SDK is a library you call from application
+          code in a programming language, returning native objects and errors your program can handle.
+      - question: Where should an application running on AWS get its credentials?
+        modelAnswer: >-
+          From the default credential provider chain, which finds the temporary credentials of the role attached to
+          the compute: the EC2 instance profile, the ECS task role or the Lambda execution role. The code contains no
+          keys at all.
+    intermediate:
+      - question: A ListObjectsV2 call in your code returns only 1,000 objects but the bucket has 5,000. Why?
+        modelAnswer: >-
+          List operations are paginated; one call returns one page (up to 1,000 keys for S3) plus a continuation token.
+          Use the SDK's paginator, or loop passing NextContinuationToken until IsTruncated is false.
+      - question: How do you tell "not found" apart from other errors in SDK v3 for JavaScript?
+        modelAnswer: >-
+          Catch the error and check its type, e.g. err instanceof NoSuchKey (or err.name === "NoSuchKey"). Handle the
+          expected case and re-throw anything else. err.$metadata gives the HTTP status, request ID and attempts, and
+          err.$fault says whether it was a client or server fault.
+    advanced:
+      - question: How would you make a payment update safe when two requests for the same order arrive at once?
+        modelAnswer: >-
+          Use a DynamoDB conditional write, for example UpdateExpression SET status = PAID with ConditionExpression
+          status = NEW. Only one update succeeds; the other fails with ConditionalCheckFailedException, which the code
+          treats as "already paid" instead of charging twice. Combine with idempotency keys for retried requests.
+
+  check:
+    - question: In step 3, why did the single ListObjectsV2 call show 2 keys while the paginator found 5?
+      hints:
+        - Look at IsTruncated in the first output line.
+      answer: >-
+        One call returns one page. MaxKeys 2 limited the page to 2 keys and IsTruncated was true. The paginator kept
+        calling with the continuation token until all 3 pages (5 objects) had arrived.
+    - question: In step 4, why was there 1 attempt for NoSuchKey but 3 for the closed port?
+      hints:
+        - Which errors are worth retrying?
+      answer: >-
+        A 404 NoSuchKey is a client error that will not change if you retry, so the SDK does not retry it. A
+        connection failure may be temporary, so the SDK retried up to maxAttempts (3).
+    - question: In step 6, which credentials and Region won when both AWS_PROFILE and environment keys were set?
+      hints:
+        - Read the warning and the two printed lines.
+      answer: >-
+        The profile's access key (lab-profile-key) won, with a warning that a future version may prefer environment
+        keys, while the Region came from AWS_REGION (eu-west-1). The safe rule is to set only one credential source.
