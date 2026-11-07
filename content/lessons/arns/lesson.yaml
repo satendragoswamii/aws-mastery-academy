@@ -1,0 +1,109 @@
+title: Amazon Resource Names (ARNs)
+summary: >-
+  The unique name of every AWS resource. The six parts of an ARN, why some parts are empty, how each service shapes the
+  resource part, paths, assumed-role and AWS managed policy ARNs, parsing ARNs safely, using ARNs as API inputs and for
+  tagging, and writing ARN patterns in IAM policies, practised against Floci.
+estimatedMinutes: 45
+prerequisites:
+  - aws-regions-in-practice
+topics:
+  - arn
+  - resource-names
+  - partitions
+  - iam-policies
+  - wildcards
+  - tagging
+labTier: verified_floci
+verifiedOn:
+  date: "2026-11-07"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (task 2.3 AWS access management capabilities, policies and resources)"
+  - exam: SAA-C03
+    domain: "Domain 1: Design Secure Architectures (task 1.1 secure access to AWS resources, IAM policies and resource-based policies)"
+
+sections:
+  terms:
+    - term: ARN
+      simple: The full, unique name of one thing in AWS, like a complete postal address.
+      technical: >-
+        Amazon Resource Name, a string of the form arn, partition, service, region, account-id and resource, separated by
+        colons. It identifies a resource unambiguously across all of AWS and is used in IAM policies, API calls, tags,
+        CloudTrail and cross-account access.
+      example: The queue ARN arn:aws:sqs:ap-south-1:000000000000:ama-l2-arn-orders named the service, Region, account and queue.
+      relevance: Every IAM policy, every cross-account permission and every event in AWS refers to resources by ARN.
+    - term: Partition
+      simple: Which separate copy of AWS the resource belongs to.
+      technical: >-
+        The second ARN field. Standard Regions use aws, China Regions use aws-cn, and AWS GovCloud (US) uses aws-us-gov.
+        Partitions are fully separate, and credentials from one don't work in another.
+      example: Every ARN in the lab started arn:aws, the standard partition.
+      relevance: Code and policies that hard-code arn:aws break in China or GovCloud; templates use a partition variable instead.
+    - term: Resource part
+      simple: The last part of an ARN that says exactly which thing it is.
+      technical: >-
+        The sixth field onward. Its format depends on the service, as a bare name (SQS), type/name (DynamoDB, IAM, KMS)
+        or type colon name (Secrets Manager, Logs), and it may itself contain colons and slashes.
+      example: The log group resource part log-group:/ama/l2/arn-app:* contained two more colons.
+      relevance: Splitting an ARN on every colon corrupts the resource part, which breaks scripts.
+    - term: Assumed-role ARN
+      simple: The name AWS gives you while you are temporarily using a role.
+      technical: >-
+        An STS ARN of the form arn:aws:sts::ACCOUNT:assumed-role/ROLE-NAME/SESSION-NAME returned by AssumeRole. It omits
+        the role's path and includes the session name, which appears in CloudTrail.
+      example: Assuming role ci/ama-l2-arn-deployer with session build-42 produced assumed-role/ama-l2-arn-deployer/build-42.
+      relevance: Policies, logs and trust policies must use the right form, role ARN or assumed-role ARN.
+    - term: Policy variable
+      simple: A placeholder in a policy ARN that is filled in with details of the person making the request.
+      technical: >-
+        A ${...} expression such as ${aws:username} or ${aws:PrincipalTag/team} inside a Resource or Condition, replaced
+        at evaluation time with the request's context value.
+      example: The policy allowed home/${aws:username}/* so ama-l2-arn-dev could write home/ama-l2-arn-dev/cv.pdf but not home/priya/cv.pdf.
+      relevance: One policy can give every user their own folder without writing a policy per user.
+
+  interview:
+    beginner:
+      - question: What is an ARN, and what are its parts?
+        modelAnswer: >-
+          An Amazon Resource Name uniquely identifies an AWS resource. Its format is arn, partition, service, region,
+          account ID and resource, separated by colons, for example arn:aws:sqs:ap-south-1:123456789012:orders.
+      - question: Why does an S3 bucket ARN have no Region or account ID?
+        modelAnswer: >-
+          Bucket names are globally unique, so the name alone identifies the bucket. Its ARN is arn:aws:s3:::bucket-name,
+          with both fields empty. Objects add a slash and the key, as in arn:aws:s3:::bucket-name/path/file.
+    intermediate:
+      - question: A policy allows s3:GetObject on arn:aws:s3:::reports, yet users get AccessDenied when reading files. Why?
+        modelAnswer: >-
+          That ARN is the bucket, but GetObject acts on objects, whose ARNs are arn:aws:s3:::reports/KEY. The policy
+          needs arn:aws:s3:::reports/* for GetObject, and the bucket ARN only for bucket actions such as ListBucket.
+      - question: How do wildcards work in policy ARNs?
+        modelAnswer: >-
+          An asterisk matches any number of characters, including slashes, and a question mark matches exactly one
+          character. Matching is case-sensitive, and a wildcard can appear in any field, including Region and account.
+    advanced:
+      - question: You write a script that extracts the resource name from ARNs, and it works for queues but fails for log groups and Lambda versions. What went wrong?
+        modelAnswer: >-
+          The script split on every colon. The resource part may contain colons (log-group:/name:* or
+          function:name:version), so only the first five colons are separators. Split into at most six fields, for
+          example cut -d: -f6- or read with six variables, or use an ARN parser library.
+
+  check:
+    - question: In step 1, which ARN had no Region, and why?
+      hints:
+        - Look at the very first line of output.
+      answer: >-
+        The caller identity arn:aws:iam::000000000000:root. IAM is a global service, so its ARNs leave the Region field
+        empty.
+    - question: In step 3, why did the first cut command print only log-group?
+      hints:
+        - Count the colons in the log group ARN.
+      answer: >-
+        The resource part contains more colons, so field 6 stopped at the next colon. Field 6 to the end (-f6-) keeps the
+        whole resource part.
+    - question: In step 6, why was the broken policy able to list the bucket but not read jan.csv?
+      hints:
+        - Which ARN does s3:GetObject need?
+      answer: >-
+        The only Resource was the bucket ARN. ListBucket acts on the bucket, so it matched, but GetObject acts on objects
+        (bucket/KEY), which the bucket ARN doesn't match.
