@@ -30,7 +30,7 @@ export function LessonBreadcrumb({ slug }: { slug: string }) {
   const place = moduleAndLevelFor(slug);
   if (!place) return null;
   return (
-    <p className="text-xs font-bold uppercase tracking-widest text-brand-600">
+    <p className="text-sm text-slate-500">
       Level {place.level.number} · {place.module.title}
     </p>
   );
@@ -40,7 +40,7 @@ export function LessonHeader({ lesson }: { lesson: Lesson }) {
   return (
     <div>
       <LessonBreadcrumb slug={lesson.slug} />
-      <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-ink-900">{lesson.title}</h1>
+      <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink-900">{lesson.title}</h1>
       <p className="mt-2 max-w-3xl text-lg text-slate-600">{lesson.summary}</p>
       <div className="mt-4">
         <LessonMeta lesson={lesson} />

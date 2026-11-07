@@ -7,19 +7,26 @@ import { CURRICULUM } from "@/content/curriculum";
 import { lessons } from "@/content/load";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getProgressMap } from "@/lib/learning/progress";
-import { LabTierLabel, ProgressBar, StatusBadge } from "@/components/ui";
+import { ProgressBar, StatusBadge } from "@/components/ui";
+
+const TIER_TEXT: Record<string, string> = {
+  verified_floci: "Hands-on in Floci",
+  partial_floci: "Partly hands-on in Floci",
+  conceptual: "Concept lesson",
+  requires_real_aws: "Needs real AWS",
+};
 
 export default function CurriculumPage() {
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-ink-900">Your curriculum</h1>
+    <div className="flex flex-col gap-10">
+      <div className="border-b border-slate-200 pb-6">
+        <h1 className="text-[1.75rem] font-semibold tracking-tight text-ink-900">Your curriculum</h1>
         <p className="mt-2 max-w-2xl text-slate-600">
-          Work from top to bottom. Each lesson builds on the ones before it. Lessons with a 🔒 are
-          still being written and open as soon as they&apos;re ready.
+          Work from top to bottom. Each lesson builds on the ones before it. Lessons marked
+          &quot;Coming soon&quot; are still being written and open as soon as they&apos;re ready.
         </p>
       </div>
-      <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-slate-200/60" />}>
+      <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-slate-100" />}>
         <CurriculumWithProgress />
       </Suspense>
     </div>
@@ -27,9 +34,7 @@ export default function CurriculumPage() {
 }
 
 const LEVEL_STYLE = [
-  { band: "from-brand-500 to-brand-600", soft: "bg-brand-50 text-brand-700" },
-  { band: "from-sky-500 to-sky-600", soft: "bg-sky-50 text-sky-700" },
-  { band: "from-violet-500 to-violet-600", soft: "bg-violet-50 text-violet-700" },
+  { soft: "text-slate-500" },
 ];
 
 async function CurriculumWithProgress() {
@@ -39,35 +44,38 @@ async function CurriculumWithProgress() {
   const authored = lessons();
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-12">
       {CURRICULUM.map((level, li) => {
         const style = LEVEL_STYLE[li % LEVEL_STYLE.length];
         const levelLessons = level.modules.flatMap((m) => m.lessons);
         const available = levelLessons.filter((l) => authored.has(l.slug)).length;
         const mastered = levelLessons.filter((l) => progress.get(l.slug)?.status === "mastered").length;
         return (
-          <section key={level.id} className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
-            <header className={`bg-gradient-to-r ${style.band} px-6 py-5 text-white`}>
-              <p className="text-xs font-bold uppercase tracking-widest text-white/80">Level {level.number}</p>
-              <h2 className="text-xl font-extrabold">{level.title}</h2>
-              <p className="mt-1 text-sm text-white/85">{level.description}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-white/90">
-                <span>{levelLessons.length} lessons</span>
-                <span>{available} ready to study</span>
-                <span>{mastered} mastered</span>
+          <section key={level.id}>
+            <header className="grid gap-4 md:grid-cols-[minmax(0,1fr)_260px] md:items-end">
+              <div>
+                <p className="text-sm text-slate-500">Level {level.number}</p>
+                <h2 className="text-xl font-semibold tracking-tight text-ink-900">{level.title}</h2>
+                <p className="mt-1 max-w-2xl text-sm text-slate-500">{level.description}</p>
               </div>
-              <div className="mt-2 max-w-sm [&>div]:bg-white/25">
+              <div>
+                <div className="mb-1.5 flex justify-between text-xs text-slate-500">
+                  <span>
+                    {available} of {levelLessons.length} ready
+                  </span>
+                  <span>{mastered} mastered</span>
+                </div>
                 <ProgressBar value={(mastered / levelLessons.length) * 100} label={`Level ${level.number} mastered`} tone="green" />
               </div>
             </header>
 
-            <div className="grid gap-6 p-6 md:grid-cols-2">
+            <div className="mt-6 grid gap-x-10 gap-y-8 lg:grid-cols-2">
               {level.modules.map((m) => (
                 <div key={m.id}>
-                  <h3 className={`mb-3 inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${style.soft}`}>
+                  <h3 className={`mb-2 text-xs font-semibold uppercase tracking-wider ${style.soft}`}>
                     {m.title}
                   </h3>
-                  <ol className="flex flex-col gap-2">
+                  <ol className="divide-y divide-slate-100 rounded-lg border border-slate-200">
                     {m.lessons.map((entry) => {
                       const lesson = authored.get(entry.slug);
                       const status = lesson ? (progress.get(entry.slug)?.status ?? "not_started") : "planned";
@@ -81,19 +89,19 @@ async function CurriculumWithProgress() {
                               : PlayCircle;
                       const iconStyle =
                         status === "mastered"
-                          ? "bg-emerald-50 text-emerald-600"
+                          ? "text-emerald-600"
                           : status === "in_progress"
-                            ? "bg-sky-50 text-sky-600"
+                            ? "text-brand-500"
                             : status === "planned"
-                              ? "bg-slate-100 text-slate-400"
-                              : "bg-brand-50 text-brand-600";
+                              ? "text-slate-300"
+                              : "text-slate-400";
                       const body = (
                         <>
-                          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${iconStyle}`}>
+                          <span className={`shrink-0 ${iconStyle}`}>
                             <Icon aria-hidden className="h-[18px] w-[18px]" />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className={`block font-semibold ${lesson ? "text-ink-900" : "text-slate-400"}`}>
+                            <span className={`block text-[15px] font-medium ${lesson ? "text-ink-900" : "text-slate-400"}`}>
                               {entry.title}
                             </span>
                             {lesson ? (
@@ -101,13 +109,14 @@ async function CurriculumWithProgress() {
                                 <span className="inline-flex items-center gap-1">
                                   <Clock aria-hidden className="h-3.5 w-3.5" />~{lesson.estimatedMinutes} min
                                 </span>
-                                <LabTierLabel tier={lesson.labTier} />
+                                <span aria-hidden>·</span>
+                                <span>{TIER_TEXT[lesson.labTier] ?? "Concept lesson"}</span>
                               </span>
                             ) : (
                               <span className="text-xs text-slate-400">Coming soon</span>
                             )}
                           </span>
-                          {lesson && <StatusBadge status={status} />}
+                          {lesson && status !== "not_started" && <StatusBadge status={status} />}
                           {lesson && <ChevronRight aria-hidden className="h-4 w-4 text-slate-300" />}
                         </>
                       );
@@ -116,12 +125,12 @@ async function CurriculumWithProgress() {
                           {lesson ? (
                             <Link
                               href={`/learn/${entry.slug}`}
-                              className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3 transition hover:border-brand-300 hover:bg-brand-50/40 hover:shadow-sm"
+                              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50"
                             >
                               {body}
                             </Link>
                           ) : (
-                            <div className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-200 p-3" aria-disabled>
+                            <div className="flex items-center gap-3 px-4 py-3" aria-disabled>
                               {body}
                             </div>
                           )}

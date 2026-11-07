@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Warm, friendly palette:
- *   brand  = orange (energy, "let's go")
- *   ink    = deep navy (calm, readable)
- *   canvas = soft warm off-white
+ * Design tokens. Calm, professional palette built for long reading sessions:
+ *   brand  = one restrained blue accent (links, active states, primary action)
+ *   ink    = near-black slate for headings
+ *   canvas = plain white; structure comes from thin borders, not colour or shadows
  */
 @theme inline {
-  --font-sans: var(--font-jakarta);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 
-  --color-brand-50: #fff7ed;
-  --color-brand-100: #ffedd5;
-  --color-brand-200: #fed7aa;
-  --color-brand-300: #fdba74;
-  --color-brand-400: #fb923c;
-  --color-brand-500: #f97316;
-  --color-brand-600: #ea580c;
-  --color-brand-700: #c2410c;
+  --color-brand-50: #eff5ff;
+  --color-brand-100: #dbe7fe;
+  --color-brand-200: #bfd3fe;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #608cf9;
+  --color-brand-500: #2f62e6;
+  --color-brand-600: #2450c9;
+  --color-brand-700: #1e40a3;
 
-  --color-ink-900: #0f1b2d;
-  --color-ink-800: #1b2a41;
-  --color-ink-700: #2b3d58;
+  --color-ink-900: #0f172a;
+  --color-ink-800: #1e293b;
+  --color-ink-700: #334155;
 
-  --color-canvas: #faf8f5;
+  --color-canvas: #ffffff;
 }
 
 html {
@@ -32,134 +32,172 @@ html {
 
 body {
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-brand-400);
+  outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
-/* ---------- Lesson prose: comfortable, friendly reading ---------- */
+/* ---------- Lesson prose: quiet, comfortable reading ---------- */
 .lesson-prose {
-  font-size: 1.0625rem; /* 17px */
+  font-size: 1.03rem; /* ~16.5px */
   line-height: 1.75;
   color: var(--color-slate-700);
   max-width: 72ch;
 }
 .lesson-prose > * + * {
-  margin-top: 1em;
+  margin-top: 1.1em;
+}
+/* The first heading of a section repeats the page topic: show it as a lead line. */
+.lesson-prose > h2:first-child {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--color-slate-500);
+  letter-spacing: 0;
+  margin-top: 0;
 }
 .lesson-prose h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 650;
+  color: var(--color-ink-900);
+  margin-top: 2.2em;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+.lesson-prose h3 {
+  font-size: 1.1rem;
+  font-weight: 650;
   color: var(--color-ink-900);
   margin-top: 2em;
   letter-spacing: -0.01em;
+  line-height: 1.4;
 }
-.lesson-prose h2:first-child {
-  margin-top: 0;
-}
-.lesson-prose h3 {
-  font-size: 1.12rem;
-  font-weight: 700;
-  color: var(--color-ink-800);
-  margin-top: 1.6em;
+.lesson-prose h3 + * {
+  margin-top: 0.6em;
 }
 .lesson-prose ul,
 .lesson-prose ol {
-  padding-left: 1.4em;
+  padding-left: 1.3em;
 }
 .lesson-prose ul {
-  list-style: none;
+  list-style: disc;
 }
-.lesson-prose ul > li {
-  position: relative;
-}
-.lesson-prose ul > li::before {
-  content: "";
-  position: absolute;
-  left: -1.05em;
-  top: 0.72em;
-  width: 0.42em;
-  height: 0.42em;
-  border-radius: 999px;
-  background: var(--color-brand-400);
+.lesson-prose ul > li::marker {
+  color: var(--color-slate-400);
 }
 .lesson-prose ol {
   list-style: decimal;
 }
 .lesson-prose ol > li::marker {
-  color: var(--color-brand-600);
-  font-weight: 700;
+  color: var(--color-slate-500);
+  font-weight: 600;
+}
+.lesson-prose li {
+  padding-left: 0.25em;
 }
 .lesson-prose li + li {
-  margin-top: 0.4em;
+  margin-top: 0.45em;
 }
 .lesson-prose a {
-  color: var(--color-brand-700);
+  color: var(--color-brand-600);
   text-decoration: underline;
+  text-decoration-color: var(--color-brand-200);
   text-underline-offset: 3px;
 }
+.lesson-prose a:hover {
+  text-decoration-color: currentColor;
+}
 .lesson-prose strong {
-  font-weight: 700;
+  font-weight: 650;
   color: var(--color-ink-900);
 }
-.lesson-prose em {
-  color: var(--color-slate-600);
-}
 
-/* "> Remember / Key idea / Important habit" callouts */
+/* "> Note" callouts: a quiet left rule, no emoji. */
 .lesson-prose blockquote {
-  position: relative;
-  background: var(--color-brand-50);
-  border: 1px solid var(--color-brand-200);
-  padding: 0.9em 1.1em 0.9em 3em;
-  border-radius: 14px;
+  border-left: 3px solid var(--color-brand-400);
+  background: var(--color-slate-50);
+  padding: 0.85em 1.1em;
+  border-radius: 0 8px 8px 0;
   color: var(--color-ink-800);
-}
-.lesson-prose blockquote::before {
-  content: "💡";
-  position: absolute;
-  left: 0.95em;
-  top: 0.85em;
-  font-size: 1.15em;
 }
 
 .lesson-prose :not(pre) > code {
   font-family: var(--font-mono);
-  font-size: 0.86em;
+  font-size: 0.85em;
   background: var(--color-slate-100);
   color: var(--color-ink-800);
-  padding: 0.12em 0.4em;
-  border-radius: 6px;
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  overflow-wrap: break-word;
+}
+
+/* Code blocks: commands (dark "Terminal") vs. output and diagrams (light). */
+.lesson-prose .code-block {
+  max-width: none;
+  border-radius: 10px;
+  overflow: hidden;
   border: 1px solid var(--color-slate-200);
+}
+.lesson-prose .code-block-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem 0.4rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .lesson-prose pre {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  line-height: 1.55;
-  background: var(--color-ink-900);
-  color: #e6edf6;
-  padding: 1.1em 1.2em;
-  border-radius: 14px;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  padding: 0.9em 1rem 1em;
+  margin: 0;
   overflow-x: auto;
-  max-width: none;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
 .lesson-prose pre code {
   font-family: inherit;
+}
+.lesson-prose .code-command {
+  border-color: #1e293b;
+}
+.lesson-prose .code-command .code-block-bar {
+  background: #1e293b;
+  color: var(--color-slate-400);
+}
+.lesson-prose .code-command pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  /* Long commands wrap so nothing is hidden off-screen. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.lesson-prose .code-output .code-block-bar {
+  background: var(--color-slate-100);
+  color: var(--color-slate-500);
+  border-bottom: 1px solid var(--color-slate-200);
+}
+.lesson-prose .code-output pre {
+  background: var(--color-slate-50);
+  color: var(--color-ink-800);
 }
 
 .lesson-prose .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--color-slate-200);
-  border-radius: 14px;
+  border-radius: 10px;
+  max-width: none;
 }
 .lesson-prose table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
 }
 .lesson-prose th,
 .lesson-prose td {
@@ -173,8 +211,9 @@ body {
 }
 .lesson-prose th {
   background: var(--color-slate-50);
-  font-weight: 700;
-  color: var(--color-ink-800);
+  font-weight: 600;
+  color: var(--color-ink-900);
+  white-space: nowrap;
 }
 
 /* Short Markdown inside small UI text (e.g. terminology cards). */

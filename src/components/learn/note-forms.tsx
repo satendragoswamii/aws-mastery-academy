@@ -12,7 +12,7 @@ import {
 const initial: NoteFormState = { error: null, savedAt: null, body: null };
 
 const textareaClass =
-  "w-full rounded-xl border border-slate-300 bg-white p-3 text-[15px] outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100";
+  "w-full rounded-lg border border-slate-300 bg-white p-3 text-[15px] outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100";
 
 /*
  * React resets a <form action> after submission. On a rejected save the server
@@ -47,7 +47,7 @@ export function AddNoteForm({ slug }: { slug: string | null }) {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center gap-1.5 self-start rounded-xl bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-800 disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 self-start rounded-lg bg-ink-900 px-4 py-2 text-sm font-medium text-white hover:bg-ink-800 disabled:opacity-60"
       >
         <Save aria-hidden className="h-4 w-4" />
         {pending ? "Saving…" : "Save note"}
@@ -86,14 +86,14 @@ export function NoteItem({ id, body, updatedAt }: { id: string; body: string; up
           <button
             type="submit"
             disabled={pending}
-            className="rounded-xl bg-ink-900 px-4 py-1.5 font-semibold text-white hover:bg-ink-800 disabled:opacity-60"
+            className="rounded-lg bg-ink-900 px-4 py-1.5 font-medium text-white hover:bg-ink-800 disabled:opacity-60"
           >
             Save
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="rounded-xl border border-slate-300 px-4 py-1.5 font-semibold text-slate-700 hover:bg-slate-50"
+            className="rounded-lg border border-slate-300 px-4 py-1.5 font-semibold text-slate-700 hover:bg-slate-50"
           >
             Cancel
           </button>

@@ -23,11 +23,11 @@ export function NavLinks() {
             href={href}
             aria-current={active ? "page" : undefined}
             title={label}
-            className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 font-semibold transition-colors md:px-3.5 ${
-              active ? "bg-white/12 text-white" : "text-slate-300 hover:bg-white/8 hover:text-white"
+            className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1.5 font-medium transition-colors ${
+              active ? "bg-slate-100 text-ink-900" : "text-slate-500 hover:bg-slate-50 hover:text-ink-900"
             }`}
           >
-            <Icon aria-hidden className={`h-4 w-4 ${active ? "text-brand-400" : ""}`} />
+            <Icon aria-hidden className="h-4 w-4 md:hidden" />
             {/* Phones show icons only so the account menu stays visible; the label stays the link's accessible name. */}
             <span className="sr-only md:not-sr-only">{label}</span>
           </Link>

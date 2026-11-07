@@ -15,12 +15,12 @@ export default function NotesPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-ink-900">Notes & bookmarks</h1>
+        <h1 className="text-[1.75rem] font-semibold tracking-tight text-ink-900">Notes & bookmarks</h1>
         <p className="mt-2 text-slate-600">
           Your own words are the best revision material. Write notes as you learn.
         </p>
       </div>
-      <Suspense fallback={<div className="h-64 animate-pulse rounded-3xl bg-slate-200/60" />}>
+      <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-slate-100" />}>
         <NotesAndBookmarks />
       </Suspense>
     </div>
@@ -72,7 +72,7 @@ async function NotesAndBookmarks() {
           >
             <ul className="flex flex-col gap-3">
               {items.map((n) => (
-                <li key={n.id} className="rounded-xl bg-amber-50/70 p-4 ring-1 ring-amber-100">
+                <li key={n.id} className="rounded-lg border border-slate-200 p-4">
                   <NoteItem id={n.id} body={n.body} updatedAt={formatDateTime(n.updatedAt)} />
                 </li>
               ))}

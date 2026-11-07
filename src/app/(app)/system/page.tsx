@@ -11,10 +11,10 @@ export default function SystemPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-ink-900">System status</h1>
+        <h1 className="text-[1.75rem] font-semibold tracking-tight text-ink-900">System status</h1>
         <p className="mt-2 text-slate-600">Checked live every time you open this page.</p>
       </div>
-      <Suspense fallback={<div className="h-48 animate-pulse rounded-3xl bg-slate-200/60" />}>
+      <Suspense fallback={<div className="h-48 animate-pulse rounded-xl bg-slate-100" />}>
         <SystemStatus />
       </Suspense>
     </div>

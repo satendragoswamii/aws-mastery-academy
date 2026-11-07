@@ -25,7 +25,7 @@ import { encouragementFor, greetingFor } from "@/lib/learning/greeting";
 import { listBookmarks, listNotes } from "@/lib/learning/progress";
 import { loadDashboard } from "@/lib/learning/server";
 import { dayInZone } from "@/lib/learning/streak";
-import { ButtonLink, Card, EmptyState, ProgressBar, ProgressRing } from "@/components/ui";
+import { ButtonLink, Card, EmptyState, ProgressBar } from "@/components/ui";
 
 export default function DashboardPage() {
   return (
@@ -38,10 +38,10 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <div className="flex animate-pulse flex-col gap-6" aria-label="Loading your dashboard">
-      <div className="h-52 rounded-3xl bg-slate-200/70" />
+      <div className="h-52 rounded-xl bg-slate-100" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-28 rounded-2xl bg-slate-200/60" />
+          <div key={i} className="h-28 rounded-xl bg-slate-100" />
         ))}
       </div>
     </div>
@@ -76,71 +76,65 @@ async function Dashboard() {
   const resumeIndex = d.resume ? SECTIONS.findIndex((s) => s.id === d.resume!.section) : -1;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* ---------- Hero ---------- */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-ink-900 via-ink-800 to-ink-700 p-6 text-white shadow-xl shadow-ink-900/15 sm:p-8">
-        <Cloud aria-hidden className="pointer-events-none absolute -right-6 -top-8 h-48 w-48 text-white/5" />
-        <Cloud aria-hidden className="pointer-events-none absolute right-40 bottom-[-3rem] h-32 w-32 text-white/5" />
-        <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-              {greetingFor(now, tz)}, {firstName} 👋
-            </h1>
-            <p className="mt-2 max-w-md text-slate-300">{encouragementFor(dayInZone(now, tz))}</p>
-            <div className="mt-5 flex flex-wrap gap-2 text-sm">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-semibold">
-                <Flame aria-hidden className="h-4 w-4 text-brand-400" />
-                {d.streak.current} day streak
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-semibold">
-                <Target aria-hidden className="h-4 w-4 text-brand-400" />
-                {LEVEL_LABEL[profile?.level ?? "absolute_beginner"]} track
-              </span>
-            </div>
+    <div className="flex flex-col gap-8">
+      {/* ---------- Welcome + continue ---------- */}
+      <section className="grid grid-cols-1 gap-6 border-b border-slate-200 pb-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-900 sm:text-[1.75rem]">
+            {greetingFor(now, tz)}, {firstName}
+          </h1>
+          <p className="mt-1.5 max-w-md text-slate-500">{encouragementFor(dayInZone(now, tz))}</p>
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+            <span className="inline-flex items-center gap-1.5">
+              <Flame aria-hidden className="h-4 w-4 text-slate-400" />
+              {d.streak.current} day streak
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Target aria-hidden className="h-4 w-4 text-slate-400" />
+              {LEVEL_LABEL[profile?.level ?? "absolute_beginner"]} track
+            </span>
           </div>
+        </div>
 
-          {/* Continue card */}
-          <div className="rounded-2xl bg-white/8 p-5 ring-1 ring-white/10 backdrop-blur">
-            {d.resume ? (
-              <div className="flex items-center gap-4">
-                <ProgressRing
+        {/* Continue card */}
+        <div className="rounded-xl border border-slate-200 p-5">
+          {d.resume ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Continue learning</p>
+              <p className="mt-1 truncate text-lg font-semibold text-ink-900">{d.resume.title}</p>
+              <p className="text-sm text-slate-500">You stopped at {sectionTitle(d.resume.section)}</p>
+              <div className="mt-3 flex items-center gap-3">
+                <ProgressBar
                   value={((resumeIndex + 1) / SECTIONS.length) * 100}
                   label={`Section ${resumeIndex + 1} of ${SECTIONS.length}`}
-                >
-                  <span className="text-lg font-extrabold leading-none">
-                    {resumeIndex + 1}
-                    <span className="block text-[10px] font-semibold text-slate-300">of {SECTIONS.length}</span>
-                  </span>
-                </ProgressRing>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold uppercase tracking-wider text-brand-300">Continue learning</p>
-                  <p className="mt-0.5 truncate text-lg font-bold">{d.resume.title}</p>
-                  <p className="text-sm text-slate-300">You stopped at {sectionTitle(d.resume.section)}</p>
-                </div>
+                />
+                <span className="shrink-0 text-xs tabular-nums text-slate-400">
+                  {resumeIndex + 1} of {SECTIONS.length}
+                </span>
               </div>
-            ) : d.recommended ? (
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-brand-300">Your first lesson</p>
-                <p className="mt-1 text-lg font-bold">{d.recommended.title}</p>
-                <p className="text-sm text-slate-300">Start here. It assumes you know nothing yet.</p>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-300">No lessons are available yet.</p>
-            )}
-            {d.resume ? (
-              <ButtonLink href={`/learn/${d.resume.slug}/${d.resume.section}`} className="mt-4 w-full">
+            </div>
+          ) : d.recommended ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Your first lesson</p>
+              <p className="mt-1 text-lg font-semibold text-ink-900">{d.recommended.title}</p>
+              <p className="text-sm text-slate-500">Start here. It assumes you know nothing yet.</p>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">No lessons are available yet.</p>
+          )}
+          {d.resume ? (
+            <ButtonLink href={`/learn/${d.resume.slug}/${d.resume.section}`} className="mt-4 w-full">
+              <PlayCircle aria-hidden className="h-4 w-4" />
+              Resume where I stopped
+            </ButtonLink>
+          ) : (
+            d.recommended && (
+              <ButtonLink href={`/learn/${d.recommended.slug}`} className="mt-4 w-full">
                 <PlayCircle aria-hidden className="h-4 w-4" />
-                Resume where I stopped
+                Start learning
               </ButtonLink>
-            ) : (
-              d.recommended && (
-                <ButtonLink href={`/learn/${d.recommended.slug}`} className="mt-4 w-full">
-                  <PlayCircle aria-hidden className="h-4 w-4" />
-                  Start learning
-                </ButtonLink>
-              )
-            )}
-          </div>
+            )
+          )}
         </div>
       </section>
 
@@ -152,10 +146,10 @@ async function Dashboard() {
           label="Learning streak"
           value={
             <>
-              {d.streak.current} <span className="text-base font-semibold text-slate-500">day{d.streak.current === 1 ? "" : "s"}</span>
+              {d.streak.current} <span className="text-base font-normal text-slate-500">day{d.streak.current === 1 ? "" : "s"}</span>
             </>
           }
-          hint={d.streak.studiedToday ? "You've studied today 🎉" : `Longest: ${d.streak.longest}. Study today to grow it.`}
+          hint={d.streak.studiedToday ? "You've studied today" : `Longest: ${d.streak.longest}. Study today to grow it.`}
         />
         <StatTile
           icon={<BookOpen className="h-5 w-5" />}
@@ -183,7 +177,7 @@ async function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
         {/* ---------- Path ---------- */}
         <Card title="Your path ahead" icon={<MapIcon className="h-4 w-4" />} action={
-          <Link href="/learn" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+          <Link href="/learn" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline">
             Full curriculum <ArrowRight aria-hidden className="h-4 w-4" />
           </Link>
         }>
@@ -194,26 +188,26 @@ async function Dashboard() {
               return (
                 <li key={p.slug} className="relative flex gap-4 pb-5 last:pb-0">
                   {i < d.path.length - 1 && (
-                    <span aria-hidden className="absolute left-[19px] top-10 h-[calc(100%-2.5rem)] w-0.5 bg-slate-200" />
+                    <span aria-hidden className="absolute left-[15px] top-8 h-[calc(100%-2rem)] w-px bg-slate-200" />
                   )}
                   <span
-                    className={`relative z-10 grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                    className={`relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full ${
                       isNext
-                        ? "bg-brand-500 text-white shadow-md shadow-brand-500/30"
+                        ? "bg-brand-500 text-white"
                         : p.available
-                          ? "bg-sky-50 text-sky-600 ring-1 ring-sky-200"
-                          : "bg-slate-100 text-slate-400"
+                          ? "bg-white text-slate-500 ring-1 ring-slate-200"
+                          : "bg-slate-50 text-slate-300"
                     }`}
                   >
-                    <Icon aria-hidden className="h-5 w-5" />
+                    <Icon aria-hidden className="h-4 w-4" />
                   </span>
-                  <div className="min-w-0 pt-1.5">
+                  <div className="min-w-0 pt-1">
                     {p.available ? (
-                      <Link href={`/learn/${p.slug}`} className={`font-semibold hover:underline ${isNext ? "text-ink-900" : "text-ink-800"}`}>
+                      <Link href={`/learn/${p.slug}`} className={`font-medium hover:underline ${isNext ? "text-ink-900" : "text-slate-700"}`}>
                         {p.title}
                       </Link>
                     ) : (
-                      <span className="font-semibold text-slate-400">{p.title}</span>
+                      <span className="font-medium text-slate-400">{p.title}</span>
                     )}
                     <p className="text-xs text-slate-500">
                       {isNext ? "Up next" : p.available ? "Ready when you are" : "Coming soon"}
@@ -228,8 +222,8 @@ async function Dashboard() {
         {/* ---------- Progress by level ---------- */}
         <Card title="Overall progress" icon={<Trophy className="h-4 w-4" />}>
           <div className="mb-1 flex items-baseline justify-between">
-            <span className="text-sm font-semibold text-slate-600">Curriculum mastered</span>
-            <span className="text-sm font-bold text-ink-900">{d.totals.percentMastered}%</span>
+            <span className="text-sm text-slate-600">Curriculum mastered</span>
+            <span className="text-sm font-semibold text-ink-900">{d.totals.percentMastered}%</span>
           </div>
           <ProgressBar value={d.totals.percentMastered} label="Curriculum mastered" />
           <ul className="mt-5 space-y-4">
@@ -238,7 +232,7 @@ async function Dashboard() {
               return (
                 <li key={lv.levelId}>
                   <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-                    <span className="font-semibold text-ink-800">
+                    <span className="font-medium text-ink-800">
                       Level {level?.number}: {level?.title}
                     </span>
                     <span className="whitespace-nowrap text-xs text-slate-500">
@@ -253,8 +247,8 @@ async function Dashboard() {
               );
             })}
           </ul>
-          <p className="mt-5 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
-            🎯 A lesson counts as mastered only after you pass its assessment. Reading it is not enough.
+          <p className="mt-5 text-xs text-slate-500">
+            A lesson counts as mastered only after you pass its assessment. Reading it is not enough.
             Assessments arrive in Phase 10.
           </p>
         </Card>
@@ -302,7 +296,7 @@ async function Dashboard() {
           title="Bookmarks & recent notes"
           icon={<Bookmark className="h-4 w-4" />}
           action={
-            <Link href="/notes" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+            <Link href="/notes" className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline">
               See all <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>
           }
@@ -317,18 +311,18 @@ async function Dashboard() {
                 <Link
                   key={`${b.lessonSlug}/${b.section}`}
                   href={`/learn/${b.lessonSlug}/${b.section}`}
-                  className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 hover:border-brand-300 hover:bg-brand-50/50"
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
                 >
-                  <Bookmark aria-hidden className="h-4 w-4 shrink-0 text-brand-500" />
+                  <Bookmark aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
                   <span className="min-w-0">
-                    <span className="block truncate font-semibold text-ink-800">{getLesson(b.lessonSlug)?.title ?? b.lessonSlug}</span>
+                    <span className="block truncate font-medium text-ink-800">{getLesson(b.lessonSlug)?.title ?? b.lessonSlug}</span>
                     <span className="text-xs text-slate-500">{sectionTitle(b.section)}</span>
                   </span>
                 </Link>
               ))}
               {notes.slice(0, 3).map((n) => (
-                <div key={n.id} className="flex gap-3 rounded-xl bg-amber-50/70 p-3 ring-1 ring-amber-100">
-                  <StickyNote aria-hidden className="h-4 w-4 shrink-0 text-amber-500" />
+                <div key={n.id} className="flex gap-3 rounded-lg border border-slate-200 p-3">
+                  <StickyNote aria-hidden className="h-4 w-4 shrink-0 text-slate-400" />
                   <div className="min-w-0">
                     <p className="line-clamp-2 whitespace-pre-wrap text-ink-800">{n.body}</p>
                     {n.lessonSlug && <p className="mt-1 text-xs text-slate-500">{getLesson(n.lessonSlug)?.title ?? n.lessonSlug}</p>}
@@ -344,10 +338,10 @@ async function Dashboard() {
 }
 
 const TONES = {
-  orange: "bg-brand-50 text-brand-600",
-  sky: "bg-sky-50 text-sky-600",
-  green: "bg-emerald-50 text-emerald-600",
-  violet: "bg-violet-50 text-violet-600",
+  orange: "text-slate-400",
+  sky: "text-slate-400",
+  green: "text-slate-400",
+  violet: "text-slate-400",
 } as const;
 
 function StatTile({
@@ -364,12 +358,12 @@ function StatTile({
   tone: keyof typeof TONES;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,27,45,0.04)]">
-      <div className="flex items-center gap-3">
-        <span className={`grid h-10 w-10 place-items-center rounded-xl ${TONES[tone]}`}>{icon}</span>
-        <span className="text-sm font-semibold text-slate-500">{label}</span>
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="flex items-center gap-2">
+        <span className={`[&>svg]:h-4 [&>svg]:w-4 ${TONES[tone]}`}>{icon}</span>
+        <span className="text-sm text-slate-500">{label}</span>
       </div>
-      <p className="mt-3 text-3xl font-extrabold tracking-tight text-ink-900">{value}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{value}</p>
       <p className="mt-1 text-xs text-slate-500">{hint}</p>
     </div>
   );

@@ -24,10 +24,10 @@ export function BookmarkButton({
         type="submit"
         disabled={pending}
         aria-pressed={state.bookmarked}
-        className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+        className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-60 ${
           state.bookmarked
-            ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
-            : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+            ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
+            : "text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-ink-900"
         }`}
       >
         {state.bookmarked ? (

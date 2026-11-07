@@ -9,12 +9,12 @@ import { logout } from "@/app/actions/auth";
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="sticky top-0 z-20 bg-ink-900 text-white shadow-lg shadow-ink-900/10">
-        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3 sm:gap-4">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:gap-6 sm:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <BrandMark />
-            <span className="hidden text-[15px] font-extrabold tracking-tight sm:block">
-              AWS Mastery <span className="text-brand-400">Academy</span>
+            <span className="hidden text-[15px] font-semibold tracking-tight text-ink-900 sm:block">
+              AWS Mastery Academy
             </span>
           </Link>
           <div className="min-w-0 flex-1">
@@ -25,7 +25,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           </Suspense>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8">{children}</main>
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }
@@ -41,7 +41,7 @@ async function UserMenu() {
   return (
     <div className="flex shrink-0 items-center gap-2">
       <span
-        className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-sm font-bold text-brand-300"
+        className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600"
         title={user.displayName}
         aria-label={`Signed in as ${user.displayName}`}
       >
@@ -50,7 +50,7 @@ async function UserMenu() {
       <form action={logout}>
         <button
           type="submit"
-          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-300 hover:bg-white/8 hover:text-white"
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-ink-900"
         >
           <LogOut aria-hidden className="h-4 w-4" />
           <span className="hidden md:inline">Sign out</span>

@@ -18,9 +18,9 @@ export function generateStaticParams() {
 
 /** The 14 sections, grouped into the three stages of learning a topic. */
 const STAGES = [
-  { title: "Understand it", emoji: "🧠", ids: ["what", "why", "how", "terms", "architecture", "real-world"] },
-  { title: "Try it", emoji: "🛠️", ids: ["demo", "cli", "troubleshooting", "security"] },
-  { title: "Prove it", emoji: "🏆", ids: ["certification", "interview", "check", "assignment"] },
+  { title: "Understand it", ids: ["what", "why", "how", "terms", "architecture", "real-world"] },
+  { title: "Try it", ids: ["demo", "cli", "troubleshooting", "security"] },
+  { title: "Prove it", ids: ["certification", "interview", "check", "assignment"] },
 ] as const;
 
 export default async function LessonOverviewPage({ params }: PageProps<"/learn/[slug]">) {
@@ -29,12 +29,12 @@ export default async function LessonOverviewPage({ params }: PageProps<"/learn/[
   if (!lesson) notFound();
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/learn" className="inline-flex items-center gap-1 self-start text-sm font-semibold text-slate-500 hover:text-ink-900">
+    <div className="flex max-w-5xl flex-col gap-8">
+      <Link href="/learn" className="inline-flex items-center gap-1 self-start text-sm font-medium text-slate-500 hover:text-ink-900">
         <ArrowLeft aria-hidden className="h-4 w-4" /> Curriculum
       </Link>
 
-      <section className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
+      <section className="border-b border-slate-200 pb-8">
         <LessonHeader lesson={lesson} />
         <div className="mt-6">
           <Suspense fallback={<div className="h-11" />}>
@@ -47,8 +47,8 @@ export default async function LessonOverviewPage({ params }: PageProps<"/learn/[
         <div className="grid gap-6 md:grid-cols-3">
           {STAGES.map((stage) => (
             <div key={stage.title}>
-              <p className="mb-2 text-sm font-bold text-ink-800">
-                <span aria-hidden>{stage.emoji}</span> {stage.title}
+              <p className="mb-2 text-sm font-semibold text-ink-800">
+                {stage.title}
               </p>
               <ol className="flex flex-col gap-1.5">
                 {stage.ids.map((id) => {
@@ -58,9 +58,9 @@ export default async function LessonOverviewPage({ params }: PageProps<"/learn/[
                     <li key={id}>
                       <Link
                         href={`/learn/${slug}/${id}`}
-                        className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-ink-800 transition hover:border-brand-300 hover:bg-brand-50/40"
+                        className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 hover:text-ink-900"
                       >
-                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 text-slate-600">
+                        <span className="text-slate-400">
                           <Icon aria-hidden className="h-4 w-4" />
                         </span>
                         <span>
@@ -106,8 +106,8 @@ async function ContinueButton({ slug }: { slug: string }) {
   const label = progress ? `Continue at ${SECTIONS.find((s) => s.id === section)?.title}` : "Start lesson";
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <ButtonLink href={`/learn/${slug}/${section}`} className="px-5 py-3 text-base">
-        <PlayCircle aria-hidden className="h-5 w-5" />
+      <ButtonLink href={`/learn/${slug}/${section}`} className="px-5 py-2.5">
+        <PlayCircle aria-hidden className="h-4 w-4" />
         {label}
       </ButtonLink>
       <StatusBadge status={progress?.status ?? "not_started"} />

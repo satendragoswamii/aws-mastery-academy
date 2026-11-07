@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { ArrowLeft, ArrowRight, ChevronDown, GraduationCap, NotebookPen, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, NotebookPen } from "lucide-react";
 import { getDb } from "@/db";
 import { getLesson, lessons } from "@/content/load";
 import { isSectionId, SECTIONS, type Lesson, type SectionId } from "@/content/schema";
@@ -14,7 +14,6 @@ import { Markdown } from "@/components/markdown";
 import { LessonBreadcrumb } from "@/components/lesson-header";
 import { BookmarkButton } from "@/components/learn/bookmark-button";
 import { AddNoteForm, NoteItem } from "@/components/learn/note-forms";
-import { SECTION_ICONS } from "@/components/learn/section-icons";
 import { SelfCheckItem } from "@/components/learn/self-check";
 import { VisitTracker } from "@/components/learn/visit-tracker";
 import { Card, ProgressBar } from "@/components/ui";
@@ -34,72 +33,40 @@ export default async function SectionPage({ params }: PageProps<"/learn/[slug]/[
   const next = SECTIONS[index + 1];
   const order = catalogue();
   const nextLesson = order.slice(order.findIndex((e) => e.slug === slug) + 1).find((e) => e.available);
-  const Icon = SECTION_ICONS[meta.id];
+
+  const position = `${index + 1} of ${SECTIONS.length}`;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid gap-10 lg:grid-cols-[230px_minmax(0,1fr)] xl:gap-14">
       <VisitTracker slug={slug} section={section} />
 
-      {/* ---------- Lesson bar: title + position ---------- */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <LessonBreadcrumb slug={slug} />
-            <Link href={`/learn/${slug}`} className="block truncate text-lg font-extrabold text-ink-900 hover:underline">
-              {lesson.title}
-            </Link>
+      {/* ---------- Sidebar (desktop) ---------- */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-22">
+          <Link href={`/learn/${slug}`} className="block text-sm font-semibold leading-snug text-ink-900 hover:text-brand-600">
+            {lesson.title}
+          </Link>
+          <div className="mt-3 flex items-center gap-3">
+            <ProgressBar value={((index + 1) / SECTIONS.length) * 100} label="Position in lesson" />
+            <span className="shrink-0 text-xs tabular-nums text-slate-400">{position}</span>
           </div>
-          <span className="text-sm font-semibold text-slate-500">
-            Section {index + 1} of {SECTIONS.length}
-          </span>
-        </div>
-        <div className="mt-3">
-          <ProgressBar value={((index + 1) / SECTIONS.length) * 100} label="Position in lesson" />
-        </div>
-      </div>
-
-      {/* Mobile section picker */}
-      <nav aria-label="Lesson sections (compact)" className="-mx-4 overflow-x-auto px-4 lg:hidden">
-        <ol className="flex gap-2">
-          {SECTIONS.map((s) => (
-            <li key={s.id}>
-              <Link
-                href={`/learn/${slug}/${s.id}`}
-                aria-current={s.id === section ? "page" : undefined}
-                className={`block whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${
-                  s.id === section ? "bg-brand-500 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200"
-                }`}
-              >
-                {s.letter}. {s.title}
-              </Link>
-            </li>
-          ))}
-        </ol>
-      </nav>
-
-      <div className="grid gap-6 lg:grid-cols-[250px_1fr]">
-        {/* ---------- Sidebar ---------- */}
-        <aside className="hidden lg:block">
-          <nav aria-label="Lesson sections" className="sticky top-24 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm">
-            <ol className="flex flex-col gap-0.5">
+          <nav aria-label="Lesson sections" className="mt-5 border-l border-slate-200">
+            <ol className="flex flex-col">
               {SECTIONS.map((s) => {
-                const SIcon = SECTION_ICONS[s.id];
                 const active = s.id === section;
                 return (
                   <li key={s.id}>
                     <Link
                       href={`/learn/${slug}/${s.id}`}
                       aria-current={active ? "page" : undefined}
-                      className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-semibold transition ${
-                        active ? "bg-brand-50 text-brand-700 ring-1 ring-brand-200" : "text-slate-600 hover:bg-slate-50 hover:text-ink-900"
+                      className={`-ml-px flex gap-2.5 border-l-2 py-1.5 pl-3.5 pr-2 text-[13.5px] leading-snug transition-colors ${
+                        active
+                          ? "border-brand-500 font-medium text-brand-700"
+                          : "border-transparent text-slate-500 hover:border-slate-300 hover:text-ink-900"
                       }`}
                     >
-                      <span
-                        className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg ${
-                          active ? "bg-brand-500 text-white" : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        <SIcon aria-hidden className="h-3.5 w-3.5" />
+                      <span aria-hidden className="w-3 shrink-0 font-mono text-xs leading-5 text-slate-400">
+                        {s.letter}
                       </span>
                       <span className="min-w-0">
                         <span className="sr-only">{s.letter} </span>
@@ -111,56 +78,92 @@ export default async function SectionPage({ params }: PageProps<"/learn/[slug]/[
               })}
             </ol>
           </nav>
-        </aside>
+        </div>
+      </aside>
 
-        {/* ---------- Main ---------- */}
-        <div className="flex min-w-0 flex-col gap-6">
-          <article className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8">
-            <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
-              <div className="flex items-center gap-4">
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-md shadow-brand-500/25">
-                  <Icon aria-hidden className="h-6 w-6" />
-                </span>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Part {meta.letter}</p>
-                  <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">{meta.title}</h2>
-                </div>
-              </div>
-              <Suspense fallback={<span className="h-10 w-40" />}>
+      {/* ---------- Main ---------- */}
+      <div className="flex min-w-0 flex-col">
+        {/* Mobile: lesson title + section picker */}
+        <div className="mb-6 lg:hidden">
+          <Link href={`/learn/${slug}`} className="text-sm font-medium text-slate-500 hover:text-ink-900">
+            {lesson.title}
+          </Link>
+          <details className="group mt-2 rounded-lg border border-slate-200">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm">
+              <span className="font-medium text-ink-900">
+                {meta.letter}. {meta.title}
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                {position}
+                <ChevronDown aria-hidden className="h-4 w-4 transition group-open:rotate-180" />
+              </span>
+            </summary>
+            <nav aria-label="Lesson sections (compact)" className="border-t border-slate-100 py-1">
+              <ol>
+                {SECTIONS.map((s) => (
+                  <li key={s.id}>
+                    <Link
+                      href={`/learn/${slug}/${s.id}`}
+                      aria-current={s.id === section ? "page" : undefined}
+                      className={`flex gap-2.5 px-3 py-2 text-sm ${
+                        s.id === section ? "bg-brand-50 font-medium text-brand-700" : "text-slate-600"
+                      }`}
+                    >
+                      <span className="w-3 font-mono text-xs leading-5 text-slate-400">{s.letter}</span>
+                      {s.title}
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </details>
+        </div>
+
+        <article className="max-w-[72ch]">
+          <header className="mb-8 border-b border-slate-200 pb-6">
+            <LessonBreadcrumb slug={slug} />
+            <div className="mt-2 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+              <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight text-ink-900">{meta.title}</h1>
+              <Suspense fallback={<span className="h-9 w-36" />}>
                 <Bookmark slug={slug} section={section} />
               </Suspense>
-            </header>
-            <SectionBody lesson={lesson} section={section} />
-          </article>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              Part {meta.letter} · Section {position}
+            </p>
+          </header>
+          <SectionBody lesson={lesson} section={section} />
+        </article>
 
-          {/* ---------- Prev / next ---------- */}
-          <nav aria-label="Section navigation" className="grid gap-3 sm:grid-cols-2">
-            {prev ? (
-              <Link
-                href={`/learn/${slug}/${prev.id}`}
-                className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm"
-              >
-                <ArrowLeft aria-hidden className="h-5 w-5 text-slate-400 group-hover:text-ink-900" />
-                <span>
-                  <span className="block text-xs font-semibold text-slate-400">Previous</span>
-                  <span className="font-bold text-ink-800">
-                    {prev.letter}. {prev.title}
-                  </span>
+        {/* ---------- Prev / next ---------- */}
+        <nav aria-label="Section navigation" className="mt-14 grid max-w-[72ch] gap-3 border-t border-slate-200 pt-6 sm:grid-cols-2">
+          {prev ? (
+            <Link
+              href={`/learn/${slug}/${prev.id}`}
+              className="group flex items-center gap-3 rounded-lg border border-slate-200 px-4 py-3 transition-colors hover:border-slate-300 hover:bg-slate-50"
+            >
+              <ArrowLeft aria-hidden className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-ink-900" />
+              <span>
+                <span className="block text-xs text-slate-500">Previous</span>
+                <span className="text-sm font-medium text-ink-900">
+                  {prev.letter}. {prev.title}
                 </span>
-              </Link>
-            ) : (
-              <span className="hidden sm:block" />
-            )}
-            {next ? (
-              <NextLink href={`/learn/${slug}/${next.id}`} kicker="Next" title={`${next.letter}. ${next.title}`} />
-            ) : nextLesson ? (
-              <NextLink href={`/learn/${nextLesson.slug}`} kicker="Lesson complete! Next lesson" title={nextLesson.title} />
-            ) : (
-              <NextLink href="/learn" kicker="You've reached the end 🎉" title="Back to curriculum (more lessons coming)" />
-            )}
-          </nav>
+              </span>
+            </Link>
+          ) : (
+            <span className="hidden sm:block" />
+          )}
+          {next ? (
+            <NextLink href={`/learn/${slug}/${next.id}`} kicker="Next" title={`${next.letter}. ${next.title}`} />
+          ) : nextLesson ? (
+            <NextLink href={`/learn/${nextLesson.slug}`} kicker="Lesson complete. Next lesson" title={nextLesson.title} />
+          ) : (
+            <NextLink href="/learn" kicker="You've reached the end" title="Back to curriculum (more lessons coming)" />
+          )}
+        </nav>
 
-          {/* ---------- Notes ---------- */}
+        {/* ---------- Notes ---------- */}
+        <div className="mt-10 max-w-[72ch]">
           <Card title="My notes for this lesson" icon={<NotebookPen className="h-4 w-4" />}>
             <Suspense fallback={<p className="text-sm text-slate-500">Loading notes…</p>}>
               <LessonNotes slug={slug} />
@@ -176,21 +179,21 @@ function NextLink({ href, kicker, title }: { href: string; kicker: string; title
   return (
     <Link
       href={href}
-      className="group flex items-center justify-end gap-3 rounded-2xl bg-brand-500 p-4 text-right text-white shadow-md shadow-brand-500/25 transition hover:bg-brand-600 sm:col-start-2"
+      className="group flex items-center justify-end gap-3 rounded-lg border border-slate-200 px-4 py-3 text-right transition-colors hover:border-brand-300 hover:bg-brand-50/50 sm:col-start-2"
     >
       <span>
-        <span className="block text-xs font-semibold text-brand-100">{kicker}</span>
-        <span className="font-bold">{title}</span>
+        <span className="block text-xs text-slate-500">{kicker}</span>
+        <span className="text-sm font-medium text-brand-700">{title}</span>
       </span>
-      <ArrowRight aria-hidden className="h-5 w-5 transition group-hover:translate-x-0.5" />
+      <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-brand-500 transition group-hover:translate-x-0.5" />
     </Link>
   );
 }
 
 const LEVEL_CHIP = {
-  beginner: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  intermediate: "bg-sky-50 text-sky-700 ring-sky-200",
-  advanced: "bg-violet-50 text-violet-700 ring-violet-200",
+  beginner: "text-slate-500",
+  intermediate: "text-slate-500",
+  advanced: "text-slate-500",
 } as const;
 
 function SectionBody({ lesson, section }: { lesson: Lesson; section: SectionId }) {
@@ -203,20 +206,19 @@ function SectionBody({ lesson, section }: { lesson: Lesson; section: SectionId }
             Read the <strong className="text-ink-900">simple</strong> meaning first. Come back for the technical one
             when it starts to make sense.
           </p>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="flex flex-col gap-4">
             {s.terms.map((t) => (
-              <div key={t.term} className="overflow-hidden rounded-2xl border border-slate-200">
-                <h3 className="flex items-center gap-2 bg-slate-50 px-4 py-3 font-extrabold text-ink-900">
-                  <Sparkles aria-hidden className="h-4 w-4 text-brand-500" />
+              <div key={t.term} className="rounded-lg border border-slate-200">
+                <h3 className="border-b border-slate-100 px-5 py-3 font-semibold text-ink-900">
                   {t.term}
                 </h3>
-                <dl className="space-y-3 p-4 text-[15px] leading-relaxed">
-                  <TermRow label="In simple words" tone="text-brand-700">{t.simple}</TermRow>
-                  <TermRow label="Technically" tone="text-sky-700">{t.technical}</TermRow>
-                  <TermRow label="Example" tone="text-emerald-700">
+                <dl className="grid gap-x-6 gap-y-3 px-5 py-4 text-[15px] leading-relaxed sm:grid-cols-[130px_1fr]">
+                  <TermRow label="In simple words">{t.simple}</TermRow>
+                  <TermRow label="Technically">{t.technical}</TermRow>
+                  <TermRow label="Example">
                     <Markdown inherit>{t.example}</Markdown>
                   </TermRow>
-                  <TermRow label="Why it matters" tone="text-violet-700">{t.relevance}</TermRow>
+                  <TermRow label="Why it matters">{t.relevance}</TermRow>
                 </dl>
               </div>
             ))}
@@ -226,23 +228,23 @@ function SectionBody({ lesson, section }: { lesson: Lesson; section: SectionId }
     case "interview":
       return (
         <div className="flex flex-col gap-6">
-          <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
-            🎤 Say your answer out loud (or write it in your notes) <em>before</em> opening the model answer.
+          <p className="text-slate-600">
+            Say your answer out loud (or write it in your notes) <em>before</em> opening the model answer.
           </p>
           {(["beginner", "intermediate", "advanced"] as const).map((lvl) => (
             <div key={lvl}>
-              <h3 className={`mb-3 inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ring-1 ${LEVEL_CHIP[lvl]}`}>
+              <h3 className={`mb-3 text-xs font-semibold uppercase tracking-wider ${LEVEL_CHIP[lvl]}`}>
                 {lvl}
               </h3>
               <div className="flex flex-col gap-2">
                 {s.interview[lvl].map((q) => (
-                  <details key={q.question} className="group rounded-2xl border border-slate-200 open:border-brand-200 open:bg-brand-50/30">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-semibold text-ink-900">
+                  <details key={q.question} className="group rounded-lg border border-slate-200 open:bg-slate-50/60">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 font-medium text-ink-900">
                       {q.question}
                       <ChevronDown aria-hidden className="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180" />
                     </summary>
                     <div className="border-t border-slate-100 px-4 pb-4 pt-3 text-[15px] leading-relaxed text-slate-700">
-                      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-emerald-700">Model answer</p>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Model answer</p>
                       {q.modelAnswer}
                     </div>
                   </details>
@@ -255,8 +257,7 @@ function SectionBody({ lesson, section }: { lesson: Lesson; section: SectionId }
     case "check":
       return (
         <div className="flex flex-col gap-5">
-          <div className="flex gap-3 rounded-2xl bg-sky-50 p-4 text-sm text-sky-900 ring-1 ring-sky-100">
-            <GraduationCap aria-hidden className="h-5 w-5 shrink-0 text-sky-600" />
+          <div className="text-slate-600">
             <p>
               Answer each question in your own words first. Use hints only if you&apos;re stuck. This self-check
               isn&apos;t graded. Graded assessments, which decide &quot;mastered&quot;, arrive in Phase 10.
@@ -272,12 +273,12 @@ function SectionBody({ lesson, section }: { lesson: Lesson; section: SectionId }
   }
 }
 
-function TermRow({ label, tone, children }: { label: string; tone: string; children: React.ReactNode }) {
+function TermRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <dt className={`text-xs font-bold uppercase tracking-wide ${tone}`}>{label}</dt>
-      <dd className="mt-0.5 text-slate-700">{children}</dd>
-    </div>
+    <>
+      <dt className="text-[13px] font-medium text-slate-400 sm:pt-0.5">{label}</dt>
+      <dd className="text-slate-700">{children}</dd>
+    </>
   );
 }
 
@@ -297,7 +298,7 @@ async function LessonNotes({ slug }: { slug: string }) {
       {notes.length > 0 && (
         <ul className="flex flex-col gap-3">
           {notes.map((n) => (
-            <li key={n.id} className="rounded-xl bg-amber-50/70 p-4 ring-1 ring-amber-100">
+            <li key={n.id} className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
               <NoteItem id={n.id} body={n.body} updatedAt={formatDateTime(n.updatedAt)} />
             </li>
           ))}
