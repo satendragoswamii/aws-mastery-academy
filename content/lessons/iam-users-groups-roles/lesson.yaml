@@ -1,0 +1,110 @@
+title: Users, groups and roles
+summary: >-
+  The three IAM identity building blocks and when to use each. Groups for teams and how permissions add up, paths and
+  tags, roles with trust and permissions policies, EC2 instance profiles, cross-account roles with an external ID, and
+  service-linked roles, practised against Floci with its trust-policy gap shown openly.
+estimatedMinutes: 50
+prerequisites:
+  - iam-introduction
+topics:
+  - iam-users
+  - iam-groups
+  - iam-roles
+  - trust-policy
+  - instance-profile
+  - cross-account
+  - service-linked-role
+labTier: partial_floci
+verifiedOn:
+  date: "2026-11-07"
+  floci: "2.4.0"
+certifications:
+  - exam: CLF-C02
+    domain: "Domain 2: Security and Compliance (task 2.3 IAM users, groups, roles and policies)"
+  - exam: SAA-C03
+    domain: "Domain 1: Design Secure Architectures (task 1.1 roles for services, cross-account access, federation)"
+
+sections:
+  terms:
+    - term: IAM user
+      simple: A permanent identity for one person or, rarely, one application.
+      technical: >-
+        An identity with long-term credentials (a console password and/or access keys) and its own policies. AWS
+        recommends federated access through IAM Identity Center for people and roles for workloads instead.
+      example: ama-l3-ugr-arjun was a user under the path /eng/ with the tag team=payments.
+      relevance: Users are simple but their long-term credentials are the most common thing to leak.
+    - term: IAM group
+      simple: A collection of users that share the same permissions.
+      technical: >-
+        A container for users with attached policies that every member inherits. Groups are not principals; they can't
+        sign in, be named in trust or resource policies, or contain other groups. A user can be in up to 10 groups.
+      example: Arjun was in developers and oncall, so he had S3 read and CloudWatch read until he left oncall.
+      relevance: Managing permissions per team instead of per person keeps access correct as people join and leave.
+    - term: IAM role
+      simple: A set of permissions that a trusted person, service or account can borrow for a while.
+      technical: >-
+        An identity with a trust policy (who may assume it) and permissions policies (what it may do). Assuming it
+        returns temporary credentials. Used by AWS services, applications, other accounts and federated users.
+      example: The role ama-l3-ugr-web trusted ec2.amazonaws.com and allowed S3 read.
+      relevance: Roles remove the need for long-term keys in applications and for duplicate users across accounts.
+    - term: Instance profile
+      simple: The wrapper that lets an EC2 instance use a role.
+      technical: >-
+        A container holding one IAM role, attached to an EC2 instance at launch or later. Code on the instance gets the
+        role's temporary credentials from the instance metadata service.
+      example: The instance launched with --iam-instance-profile Name=ama-l3-ugr-web showed state associated.
+      relevance: The standard, keyless way to give EC2 applications AWS permissions.
+    - term: External ID
+      simple: A shared secret word a partner must give when using a role you made for them.
+      technical: >-
+        A value checked with the sts ExternalId condition key in a role's trust policy. It prevents the confused deputy
+        problem, where a third-party service is tricked into using one customer's role for another customer.
+      example: The partner role required the external ID ama-partner-7731.
+      relevance: Required practice whenever a third-party SaaS product assumes roles in your account.
+
+  interview:
+    beginner:
+      - question: What is the difference between an IAM user and an IAM role?
+        modelAnswer: >-
+          A user is a permanent identity with long-term credentials, usually for one person. A role has no permanent
+          credentials; trusted principals assume it and receive temporary credentials. Roles are used by services,
+          applications, other accounts and federated users.
+      - question: Why attach policies to groups instead of users?
+        modelAnswer: >-
+          Permissions follow the job, not the person. Adding someone to a group grants everything the team needs, and
+          removing them takes it away, without editing policies. It also makes access easier to review.
+    intermediate:
+      - question: How should an application on EC2 get permission to read an S3 bucket?
+        modelAnswer: >-
+          Create a role that trusts ec2.amazonaws.com with a policy allowing read on that bucket, put it in an instance
+          profile, and attach the profile to the instance. The SDK picks up temporary credentials automatically; no
+          access keys are stored on the server.
+      - question: Can you use an IAM group as the principal in a role's trust policy?
+        modelAnswer: >-
+          No. Groups are not principals. Trust the account (or specific users or roles), and control who may call
+          sts AssumeRole on the role with a policy attached to the group.
+    advanced:
+      - question: A SaaS monitoring vendor asks for a role in your account. How do you set it up safely?
+        modelAnswer: >-
+          Create a role whose trust policy allows only the vendor's account, with a condition requiring the unique
+          external ID the vendor gives you. Attach the narrowest permissions it needs (often a read-only policy), set a
+          short maximum session duration, and monitor its use in CloudTrail.
+
+  check:
+    - question: In step 2, why could Arjun read CloudWatch metrics but Sneha could not?
+      hints:
+        - Compare their group memberships in step 1.
+      answer: >-
+        Arjun was also in the oncall group, which had CloudWatchReadOnlyAccess. Sneha was only in developers.
+    - question: In step 4, why was an instance profile needed?
+      hints:
+        - What does EC2 attach to an instance?
+      answer: >-
+        EC2 attaches instance profiles, not roles. The profile is a container for the role, and the instance receives
+        the role's temporary credentials through it.
+    - question: Would the last command of step 5 succeed on real AWS?
+      hints:
+        - Who does the trust policy allow, and with which condition?
+      answer: >-
+        No. The trust policy only allows account 111122223333 with the external ID ama-partner-7731. A caller from
+        another account without the external ID gets AccessDenied. Floci doesn't check trust policies.
